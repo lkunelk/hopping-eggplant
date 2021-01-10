@@ -1,0 +1,8 @@
+joint_state_controller:
+  type: "joint_state_controller/JointStateController"
+  publish_rate: 50
+
+flywheel_controller:
+  type: "velocity_controllers/JointVelocityController"
+  joint: arm_to_flywheel
+

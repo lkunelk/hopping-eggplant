@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
+  <xacro:include filename="$(find pendulum)/urdf/arm.xacro" />
+  <xacro:include filename="$(find pendulum)/urdf/flywheel.xacro" />
+  
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size=".10 .10 .05"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size=".10 .10 .05"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="100"/>
+      <inertia ixx="10.0" ixy="0.00" ixz="0.00" iyy="10.0" iyz="0.00" izz="10.0"/>
+    </inertial>
+  </link>
+  
+  <xacro:arm length="0.30" width="0.02" />
+  
+  <!-- Add ROS plugin so we can interact with our robot -->
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/</robotNamespace>
+    </plugin>
+  </gazebo>
+</robot>
