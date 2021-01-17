@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
+<xacro:macro name="arm" params="length width linear_density">
+  
+  <xacro:property name="mass" value="${linear_density * length}" />
+  
+  <link name="arm_link">
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+      <geometry>
+        <box size="${width} ${width} ${length}"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+      <geometry>
+        <box size="${width} ${width} ${length}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+      <mass value="${linear_density * length}"/>
+      <inertia ixx="${mass/12*(width**2 + width**2)}"
+               ixy="0.00"
+               ixz="0.00"
+               iyy="${mass/12*(width**2 + width**2)}"
+               iyz="0.00"
+               izz="${mass/12*(width**2 + width**2)}"/>
+    </inertial>
+  </link>
+  
+  <joint name="base_to_arm" type="continuous">
+    <axis xyz="1 0 0"/>
+    <parent link="base_link"/>
+    <child link="arm_link"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </joint>
+
+</xacro:macro>
+</robot>
+

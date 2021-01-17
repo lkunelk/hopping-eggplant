@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
+  <xacro:include filename="$(find pendulum)/urdf/arm.xacro" />
+  <xacro:include filename="$(find pendulum)/urdf/flywheel.xacro" />
+  
+  <xacro:property name="base_mass_kg" value="100" />
+  <xacro:property name="base_x_m" value=".05" />
+  <xacro:property name="base_y_m" value=".05" />
+  <xacro:property name="base_z_m" value=".06" />
+  
+  <xacro:property name="arm_linear_density_kg_m" value=".129" />
+  <xacro:property name="arm_length_m" value=".10" />
+  <xacro:property name="arm_width_m" value=".02" />
+  
+  <xacro:property name="motor_mass_kg" value=".186" />
+  <xacro:property name="wheel_mass_kg" value=".037" />
+  <xacro:property name="wheel_radius_m" value=".05" />
+  <xacro:property name="wheel_length_m" value=".02" />
+  
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="${base_x_m} ${base_y_m} ${base_z_m}"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${base_x_m} ${base_y_m} ${base_z_m}"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="${base_mass_kg}"/>
+      <inertia ixx="${base_mass_kg/12*(base_y_m**2 + base_z_m**2)}"
+               ixy="0.00"
+               ixz="0.00"
+               iyy="${base_mass_kg/12*(base_x_m**2 + base_z_m**2)}"
+               iyz="0.00"
+               izz="${base_mass_kg/12*(base_x_m**2 + base_y_m**2)}"/>
+    </inertial>
+  </link>
+  
+  <xacro:arm length="${arm_length_m}"
+             width="${arm_width_m}"
+             linear_density="${arm_linear_density_kg_m}"/>
+
+  <xacro:flywheel length="${wheel_length_m}"
+                  radius="${wheel_radius_m}"
+                  offset="${arm_length_m}"
+                  mass="${wheel_mass_kg}"
+                  motor_mass="${motor_mass_kg}"/>
+  
+  <!-- Add ROS plugin so we can interact with our robot -->
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/</robotNamespace>
+    </plugin>
+  </gazebo>
+</robot>
+
