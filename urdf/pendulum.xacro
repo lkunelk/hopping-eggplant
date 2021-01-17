@@ -17,6 +17,8 @@
   <xacro:property name="wheel_radius_m" value=".05" />
   <xacro:property name="wheel_length_m" value=".02" />
   
+  <link name="world" />
+    
   <link name="base_link">
     <visual>
       <geometry>
@@ -48,6 +50,11 @@
                   offset="${arm_length_m}"
                   mass="${wheel_mass_kg}"
                   motor_mass="${motor_mass_kg}"/>
+  
+  <joint name="fixed" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
   
   <!-- Add ROS plugin so we can interact with our robot -->
   <gazebo>
