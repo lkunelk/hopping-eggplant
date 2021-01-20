@@ -1,3 +1,5 @@
+import numpy as np
+import control
 Mmotor = 0.186
 Mfly = 0.0357
 rdisk = 0.0617318752905765
@@ -11,7 +13,8 @@ A = np.array([[ 0, 1, 0, 0 ], [ 0, 0, 1, 0 ], [ 0, Itot * g, -b, 0 ], [ 0, 0, -I
 B = np.array([ 0, 0, 1, 0 ]).reshape((-1, 1))[:3]
 Q = np.diag([ 10, 1, 0.1, 10 ])[:3, :3]
 R = np.array([ 100 ])
-control.lqr(A, B, Q, R)
+K = control.lqr(A, B, Q, R)[0]
+print(K)
 
 # soln: K = matrix([[3.16227766, 4.9763414 , 3.16061237]]): this is a controller that applies this in units of N-m torque, which I just need to translate to angular acceleration through the flywheel inertia I think
 # array([145.27566309, 682.80899015, 787.61792219]) in units of angular acceleration of the flywheel ((rad/s)/s) at 32Hz ticks (this seems very aggressive)
