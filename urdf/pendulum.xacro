@@ -54,6 +54,7 @@
   <joint name="fixed" type="fixed">
     <parent link="world"/>
     <child link="base_link"/>
+    <origin rpy="0 0 0" xyz="0 0 ${2 * base_z_m - 1}"/>
   </joint>
   
   <!-- Add ROS plugin so we can interact with our robot -->

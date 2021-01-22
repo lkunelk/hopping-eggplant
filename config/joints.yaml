@@ -3,6 +3,6 @@ joint_state_controller:
   publish_rate: 50
 
 flywheel_controller:
-  type: "velocity_controllers/JointVelocityController"
+  type: "effort_controllers/JointEffortController"
   joint: arm_to_flywheel
 
