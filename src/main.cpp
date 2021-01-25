@@ -5,10 +5,16 @@
 #include "tf2/LinearMath/Quaternion.h"
 
 #include <iostream>
+#include <cmath>
 
-float P{5};
-float I{1};
-float D{0};
+const float P{1.0};
+const float I{0.1};
+const float D{0};
+
+// Motor Parameters
+const float stallTorque = 0.733;  // Nm
+const float noLoadSpeed = 1235.7;  // rad/s
+
 ros::Publisher commandPub;
 ros::Publisher posPub, velPub, flywheelVelPub;
 std_msgs::Float64 commandMsg;
@@ -37,6 +43,11 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   
   // compute and publish control command
   float command = P * position + I * velocity;
+  float sign = (command > 0) - (command < 0);
+  float maxTorque = (1 - std::abs(flywheelVel) / noLoadSpeed) * stallTorque;
+  
+  command = sign * std::min(maxTorque, std::abs(command));
+  
   commandMsg.data = command;
   commandPub.publish(commandMsg);
   

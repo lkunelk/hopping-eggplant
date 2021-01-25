@@ -29,11 +29,12 @@
     </inertial>
   </link>
   
-  <joint name="base_to_arm" type="continuous">
+  <joint name="base_to_arm" type="revolute">
     <axis xyz="1 0 0"/>
     <parent link="base_link"/>
     <child link="arm_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
+    <limit effort="100" upper="0.5" lower="-0.5" velocity="1000"/>
   </joint>
 
 </xacro:macro>
