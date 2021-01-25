@@ -6,3 +6,6 @@ flywheel_controller:
   type: "effort_controllers/JointEffortController"
   joint: arm_to_flywheel
 
+arm_controller:
+  type: "effort_controllers/JointEffortController"
+  joint: base_to_arm

@@ -40,7 +40,8 @@
         pkg="controller_manager"
         type="spawner"
         args="joint_state_controller
-              flywheel_controller" />
+              flywheel_controller
+              arm_controller" />
 </launch>
 
 
