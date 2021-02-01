@@ -19,3 +19,12 @@ source build/setup.bash
 ```
 roslaunch pendulum gazebo.launch
 ```
+4. run controller
+```
+rosrun pendulum my_controller
+```
+
+5. publish to motor directly
+```
+rostopic pub /flywheel_controller/command std_msgs/Float64 "data: 0.0"
+```
