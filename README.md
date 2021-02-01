@@ -28,3 +28,11 @@ rosrun pendulum my_controller
 ```
 rostopic pub /flywheel_controller/command std_msgs/Float64 "data: 0.0"
 ```
+6. graph data
+```
+rqt_plot
+```
+manually add topics to graph. You can see available topics with following:
+```
+rostopic list
+```
