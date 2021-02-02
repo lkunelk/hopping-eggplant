@@ -28,7 +28,7 @@
               -urdf
               -model robot
               -param robot_description
-              -J robot::base_to_arm 0.5"/>
+              -R 1.0"/>
 
   <!-- load multiple values stored in .yaml file into global parameters -->
   <!-- parameters store motor controller configurations -->
@@ -36,10 +36,10 @@
             file="$(find pendulum)/config/joints.yaml" />
   
   <!-- Spawn controllers -->
-  <node name="pend_main_ctrl"
+  <!-- <node name="pend_main_ctrl"
         pkg="pendulum"
         type="my_controller"
-    />
+    /> -->
   
   <node name="bot_controller_spawner"
         pkg="controller_manager"

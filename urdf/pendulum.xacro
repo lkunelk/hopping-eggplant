@@ -3,7 +3,7 @@
   <xacro:include filename="$(find pendulum)/urdf/arm.xacro" />
   <xacro:include filename="$(find pendulum)/urdf/flywheel.xacro" />
   
-  <xacro:property name="base_mass_kg" value="10" />
+  <xacro:property name="base_mass_kg" value="0.01" />
   <xacro:property name="base_x_m" value=".05" />
   <xacro:property name="base_y_m" value=".05" />
   <xacro:property name="base_z_m" value=".06" />

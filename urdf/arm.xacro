@@ -54,7 +54,7 @@
     </inertial>
   </link>
   
-  <joint name="base_to_arm" type="continuous">
+  <joint name="base_to_arm" type="fixed">
     <axis xyz="1 0 0"/>
     <parent link="base_link"/>
     <child link="arm0_link"/>

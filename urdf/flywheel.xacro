@@ -7,11 +7,11 @@
           <cylinder length="${length}" radius="${radius}"/>
         </geometry>
       </visual>
-      <collision>
+      <!-- <collision>
         <geometry>
           <cylinder length="${length}" radius="${radius}"/>
         </geometry>
-      </collision>
+      </collision> -->
       <inertial>
         <mass value="${mass + motor_mass}"/>
         <inertia ixx="${1/12*mass*(3*radius**2 + length**2)}"
