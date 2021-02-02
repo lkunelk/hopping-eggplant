@@ -11,12 +11,12 @@
         <box size="${width} ${width} ${length}"/>
       </geometry>
     </visual>
-    <collision>
+    <!--collision>
       <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
       <geometry>
         <box size="${width} ${width} ${length}"/>
       </geometry>
-    </collision>
+    </collision-->
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
       <mass value="${linear_density * length}"/>
@@ -29,20 +29,41 @@
     </inertial>
   </link>
   
+  <!-- <link name="arm0_link">
+  </link>
+  
   <joint name="base_to_arm" type="revolute">
     <axis xyz="1 0 0"/>
     <parent link="base_link"/>
-    <child link="arm_link"/>
+    <child link="arm0_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <limit effort="100" upper="1.5708" lower="-1.5708" velocity="1000"/>
+  </joint> -->
+  
+  <joint name="arm_prism" type="prismatic">
+    <axis xyz="0 0 1" />
+    <parent link="base_link" />
+    <child link="arm_link" />
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <limit effort="1000" velocity="1000" />
   </joint>
 
-  <transmission name="$arm_transmission">
+  <!-- <transmission name="$arm_transmission">
     <type>transmission_interface/SimpleTransmission</type>
     <actuator name="$arm_motor">
       <mechanicalReduction>1</mechanicalReduction>
     </actuator>
     <joint name="base_to_arm">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission> -->
+  
+  <transmission name="$arm_prism_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="$arm_prism_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="arm_prism">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
   </transmission>

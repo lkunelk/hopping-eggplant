@@ -8,4 +8,5 @@ flywheel_controller:
 
 arm_controller:
   type: "effort_controllers/JointEffortController"
-  joint: base_to_arm
+  joint: arm_prism
+  # pid: { p: 10, i: 0.01, d: 3 }
