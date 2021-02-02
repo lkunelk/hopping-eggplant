@@ -36,3 +36,9 @@ manually add topics to graph. You can see available topics with following:
 ```
 rostopic list
 ```
+
+7. delete and spawn new model
+```
+roslaunch pendulum respawn.launch
+```
+
