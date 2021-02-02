@@ -16,11 +16,12 @@ const float stallTorque = 0.733;  // Nm
 const float noLoadSpeed = 1235.7;  // rad/s
 
 ros::Publisher commandPub;
-ros::Publisher posPub, velPub, flywheelVelPub;
+ros::Publisher posPub, velPub, flywheelVelPub, armPrismPub;
 std_msgs::Float64 commandMsg;
 std_msgs::Float64 posMsg;
 std_msgs::Float64 velMsg;
 std_msgs::Float64 flywheelVelMsg;
+std_msgs::Float64 armPrismMsg;
 
 
 void chatterCallback(const gazebo_msgs::LinkStates& msg)
@@ -60,6 +61,10 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   velPub.publish(velMsg);
   flywheelVelPub.publish(flywheelVelMsg);
   
+  // we should just be able to one-and-done this but I don't know when the controller loads so best to keep emitting
+  armPrismMsg.data = 0.0;
+  armPrismPub.publish(armPrismMsg);
+  
   ROS_INFO("ArmPos, ArmVel, FlyVel, Command: [%f, %f, %f, %f]", position, velocity, flywheelVel, command);
 }
 
@@ -69,7 +74,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "my_node");
 
   ros::NodeHandle n;
-
+  
+  armPrismPub = n.advertise<std_msgs::Float64>("arm_controller/command", 1000);
   commandPub = n.advertise<std_msgs::Float64>("flywheel_controller/command", 1000);
   posPub = n.advertise<std_msgs::Float64>("pendulum_pos", 1000);
   velPub = n.advertise<std_msgs::Float64>("pendulum_vel", 1000);

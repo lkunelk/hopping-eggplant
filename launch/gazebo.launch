@@ -12,7 +12,7 @@
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="debug" value="false" />
     <arg name="gui" value="true" />
-    <arg name="paused" value="false"/>
+    <arg name="paused" value="true"/>
     <arg name="use_sim_time" value="true"/>
     <arg name="headless" value="false"/>
   </include>
@@ -25,10 +25,10 @@
         respawn="false"
         output="screen"
         args="-z 1.0
-              -unpause
               -urdf
               -model robot
-              -param robot_description"/>
+              -param robot_description
+              -J robot::base_to_arm 0.5"/>
 
   <!-- load multiple values stored in .yaml file into global parameters -->
   <!-- parameters store motor controller configurations -->
@@ -36,6 +36,11 @@
             file="$(find pendulum)/config/joints.yaml" />
   
   <!-- Spawn controllers -->
+  <node name="pend_main_ctrl"
+        pkg="pendulum"
+        type="my_controller"
+    />
+  
   <node name="bot_controller_spawner"
         pkg="controller_manager"
         type="spawner"

@@ -29,23 +29,45 @@
     </inertial>
   </link>
   
-  <!-- <link name="arm0_link">
+  <link name="arm0_link">
+    <!-- <visual>
+      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+      <geometry>
+        <box size="${width} ${width} ${length}"/>
+      </geometry>
+    </visual> -->
+    <!--collision>
+      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+      <geometry>
+        <box size="${width} ${width} ${length}"/>
+      </geometry>
+    </collision-->
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+      <mass value="${linear_density * length}"/>
+      <inertia ixx="0"
+               ixy="0.00"
+               ixz="0.00"
+               iyy="10"
+               iyz="0.00"
+               izz="10"/>
+    </inertial>
   </link>
   
-  <joint name="base_to_arm" type="revolute">
+  <joint name="base_to_arm" type="continuous">
     <axis xyz="1 0 0"/>
     <parent link="base_link"/>
     <child link="arm0_link"/>
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <limit effort="100" upper="1.5708" lower="-1.5708" velocity="1000"/>
-  </joint> -->
+    <limit effort="100" velocity="1000"/>
+  </joint>
   
   <joint name="arm_prism" type="prismatic">
     <axis xyz="0 0 1" />
-    <parent link="base_link" />
+    <parent link="arm0_link" />
     <child link="arm_link" />
     <origin rpy="0 0 0" xyz="0 0 0"/>
-    <limit effort="1000" velocity="1000" />
+    <limit lower="-1" upper="1" effort="1000" velocity="1000" />
   </joint>
 
   <!-- <transmission name="$arm_transmission">
