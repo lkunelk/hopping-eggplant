@@ -30,18 +30,6 @@
   </link>
   
   <link name="arm0_link">
-    <!-- <visual>
-      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-      <geometry>
-        <box size="${width} ${width} ${length}"/>
-      </geometry>
-    </visual> -->
-    <!--collision>
-      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-      <geometry>
-        <box size="${width} ${width} ${length}"/>
-      </geometry>
-    </collision-->
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
       <mass value="${linear_density * length}"/>
@@ -53,6 +41,7 @@
                izz="10"/>
     </inertial>
   </link>
+
   
   <joint name="base_to_arm" type="fixed">
     <axis xyz="1 0 0"/>
@@ -67,6 +56,7 @@
     <parent link="arm0_link" />
     <child link="arm_link" />
     <origin rpy="0 0 0" xyz="0 0 0"/>
+    <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
     <limit lower="-1" upper="1" effort="1000" velocity="1000" />
   </joint>
 

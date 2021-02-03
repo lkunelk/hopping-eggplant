@@ -3,7 +3,7 @@
   <xacro:include filename="$(find pendulum)/urdf/arm.xacro" />
   <xacro:include filename="$(find pendulum)/urdf/flywheel.xacro" />
   
-  <xacro:property name="base_mass_kg" value="0.01" />
+  <xacro:property name="base_mass_kg" value="0.001" />
   <xacro:property name="base_x_m" value=".05" />
   <xacro:property name="base_y_m" value=".05" />
   <xacro:property name="base_z_m" value=".06" />
@@ -34,8 +34,8 @@
       <surface>
         <friction>
           <ode>
-            <mu>10000</mu>
-            <mu2>10000</mu2>
+            <mu>0.6</mu>
+            <mu2>0.6</mu2>
           </ode>
         </friction>
       </surface>
@@ -45,9 +45,9 @@
       <inertia ixx="0.00"
                ixy="0.00"
                ixz="0.00"
-               iyy="10"
+               iyy="1"
                iyz="0.00"
-               izz="10"/> <!-- ${base_mass_kg/12*(base_x_m**2 + base_z_m**2)} -->
+               izz="1"/> <!-- ${base_mass_kg/12*(base_x_m**2 + base_z_m**2)} -->
     </inertial>
   </link>
   
@@ -71,6 +71,10 @@
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/</robotNamespace>
+    </plugin>
+    <plugin name="v_naught" filename="libInitialVelocityPlugin.so">
+      <link>base_link</link>
+      <linear>0 0 -3.0</linear>
     </plugin>
   </gazebo>
 </robot>

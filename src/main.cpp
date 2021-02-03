@@ -8,7 +8,7 @@
 #include <cmath>
 
 const float P{1.0};
-const float I{0.1};
+const float I{0.05};
 const float D{0};
 
 // Motor Parameters
