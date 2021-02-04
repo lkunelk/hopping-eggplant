@@ -36,10 +36,10 @@
             file="$(find pendulum)/config/joints.yaml" />
   
   <!-- Spawn controllers -->
-  <node name="pend_main_ctrl"
+  <!-- <node name="pend_main_ctrl"
         pkg="pendulum"
         type="my_controller"
-    />
+    /> -->
   
   <node name="bot_controller_spawner"
         pkg="controller_manager"
