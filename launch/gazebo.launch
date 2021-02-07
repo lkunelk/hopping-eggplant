@@ -38,20 +38,24 @@
   <!-- Base link contact listener -->
   <node name="base_contact"
         pkg="pendulum"
+        respawn="true"
         type="base_contact"
     />
   
   <!-- Spawn controllers -->
   <node name="pend_main_ctrl"
         pkg="pendulum"
+        respawn="true"
         type="my_controller"
     />
   
   <node name="bot_controller_spawner"
         pkg="controller_manager"
         type="spawner"
+        respawn="true"
         args="joint_state_controller
               flywheel_controller
+              arm_spring
               arm_controller" />
 </launch>
 

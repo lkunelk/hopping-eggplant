@@ -21,20 +21,20 @@ const float stallTorque = 0.733;  // Nm
 const float noLoadSpeed = 1235.7;  // rad/s
 
 ros::Publisher commandPub;
-ros::Publisher posPub, velPub, flywheelVelPub, armPrismPub;
+ros::Publisher posPub, velPub, flywheelVelPub, armSpringPub;
 std_msgs::Float64 commandMsg;
 std_msgs::Float64 posMsg;
 std_msgs::Float64 velMsg;
 std_msgs::Float64 flywheelVelMsg;
-std_msgs::Float64 armPrismMsg;
+std_msgs::Float64 armSpringMsg;
 
 bool last_collided = false;
 
 void chatterCallback(const gazebo_msgs::LinkStates& msg)
 {
-  geometry_msgs::Quaternion q = msg.pose[2].orientation;
-  geometry_msgs::Vector3 a = msg.twist[2].angular;
-  geometry_msgs::Vector3 flyA = msg.twist[3].angular;
+  geometry_msgs::Quaternion q = msg.pose[3].orientation;
+  geometry_msgs::Vector3 a = msg.twist[3].angular;
+  geometry_msgs::Vector3 flyA = msg.twist[4].angular;
   
   // convert to radians
   tf2::Quaternion myQ(q.x, q.y, q.z, q.w);
@@ -70,6 +70,9 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   commandMsg.data = command;
   commandPub.publish(commandMsg);
   
+  // armSpringMsg.data = 0.0f;
+  // armSpringPub.publish(armSpringMsg);
+  
   // Publish pendulum state for debug
   posMsg.data = position;
   velMsg.data = velocity;
@@ -92,7 +95,7 @@ int main(int argc, char **argv)
 
   ros::NodeHandle n;
   
-  armPrismPub = n.advertise<std_msgs::Float64>("arm_controller/command", 1000);
+  armSpringPub = n.advertise<std_msgs::Float64>("arm_spring/command", 1000);
   commandPub = n.advertise<std_msgs::Float64>("flywheel_controller/command", 1000);
   posPub = n.advertise<std_msgs::Float64>("pendulum_pos", 1000);
   velPub = n.advertise<std_msgs::Float64>("pendulum_vel", 1000);

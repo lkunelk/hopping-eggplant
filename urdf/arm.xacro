@@ -31,7 +31,8 @@
   
   <link name="arm0_link">
     <inertial>
-      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <!-- holds the mass of the solenoid, DSTL-0829-12 -->
       <mass value="0.001"/>
       <inertia ixx="0"
                ixy="0.00"
@@ -41,24 +42,60 @@
                izz="10"/>
     </inertial>
   </link>
-
+  
+  <!-- <link name="arm1_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="0"
+               ixy="0.00"
+               ixz="0.00"
+               iyy="10"
+               iyz="0.00"
+               izz="10"/>
+    </inertial>
+  </link> -->
+  
+  <link name="arm2_link">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0.10206"/>
+      <inertia ixx="0"
+               ixy="0.00"
+               ixz="0.00"
+               iyy="10"
+               iyz="0.00"
+               izz="10"/>
+    </inertial>
+  </link>
   
   <joint name="base_to_arm" type="fixed">
-    <axis xyz="1 0 0"/>
     <parent link="base_link"/>
     <child link="arm0_link"/>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <limit effort="100" velocity="1000"/>
   </joint>
   
   <joint name="arm_prism" type="prismatic">
     <axis xyz="0 0 1" />
     <parent link="arm0_link" />
+    <child link="arm2_link" />
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
+    <limit lower="-0.013" upper="0" effort="1000" velocity="1000" />
+  </joint>
+  
+  <joint name="arm_spring" type="prismatic">
+    <axis xyz="0 0 1" />
+    <parent link="arm2_link" />
     <child link="arm_link" />
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
-    <limit lower="-1" upper="0" effort="1000" velocity="1000" />
+    <limit lower="-1" upper="1" effort="1000" velocity="1000" />
   </joint>
+  
+  <!-- <joint name="arm_fix" type="fixed">
+    <parent link="arm1_link" />
+    <child link="arm2_link" />
+  </joint> -->
 
   <!-- <transmission name="$arm_transmission">
     <type>transmission_interface/SimpleTransmission</type>
@@ -69,6 +106,16 @@
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
   </transmission> -->
+  
+  <transmission name="$arm_spring_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="$arm_spring_motor">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="arm_spring">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
   
   <transmission name="$arm_prism_transmission">
     <type>transmission_interface/SimpleTransmission</type>
