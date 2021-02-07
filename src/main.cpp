@@ -4,11 +4,6 @@
 #include "std_msgs/Bool.h"
 #include "geometry_msgs/Quaternion.h"
 #include "tf2/LinearMath/Quaternion.h"
-#include "gazebo_msgs/ContactState.h"
-
-#include <gazebo/transport/transport.hh>
-#include <gazebo/msgs/msgs.hh>
-#include <gazebo/gazebo_client.hh>
 
 #include <iostream>
 #include <cmath>
@@ -83,10 +78,6 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   posPub.publish(posMsg);
   velPub.publish(velMsg);
   flywheelVelPub.publish(flywheelVelMsg);
-  
-  // we should just be able to one-and-done this but I don't know when the controller loads so best to keep emitting
-  armPrismMsg.data = 0.0;
-  armPrismPub.publish(armPrismMsg);
   
   // ROS_INFO("ArmPos, ArmVel, FlyVel, Command: [%f, %f, %f, %f]", position, velocity, flywheelVel, command);
 }
