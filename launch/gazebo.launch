@@ -7,7 +7,7 @@
   <!-- xacro parses xacro files and returns a urdf file -->
   <param name="robot_description"
          command="$(find xacro)/xacro $(arg model)" />
-
+         
   <!-- We use empty_world.launch to start gazebo, changing only the name of the world to be launched -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="debug" value="false" />
@@ -24,22 +24,28 @@
         type="spawn_model"
         respawn="false"
         output="screen"
-        args="-z 0.3
+        args="-z 0.1
               -urdf
               -model robot
-              -param robot_description
-              -R 1.8"/>
+              -param robot_description"/> <!-- 
+              -R 1.8 -->
 
   <!-- load multiple values stored in .yaml file into global parameters -->
   <!-- parameters store motor controller configurations -->
   <rosparam command="load"
             file="$(find pendulum)/config/joints.yaml" />
   
+  <!-- Base link contact listener -->
+  <node name="base_contact"
+        pkg="pendulum"
+        type="base_contact"
+    />
+  
   <!-- Spawn controllers -->
-  <!-- <node name="pend_main_ctrl"
+  <node name="pend_main_ctrl"
         pkg="pendulum"
         type="my_controller"
-    /> -->
+    />
   
   <node name="bot_controller_spawner"
         pkg="controller_manager"

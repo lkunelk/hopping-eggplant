@@ -78,10 +78,10 @@
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/</robotNamespace>
     </plugin>
-    <plugin name="v_naught" filename="libInitialVelocityPlugin.so">
+    <!-- <plugin name="v_naught" filename="libInitialVelocityPlugin.so">
       <link>base_link</link>
       <linear>0 4.0 0</linear>
-    </plugin>
+    </plugin> -->
   </gazebo>
 </robot>
 

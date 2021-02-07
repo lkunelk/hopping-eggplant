@@ -32,7 +32,7 @@
   <link name="arm0_link">
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-      <mass value="${linear_density * length}"/>
+      <mass value="0.001"/>
       <inertia ixx="0"
                ixy="0.00"
                ixz="0.00"
@@ -57,7 +57,7 @@
     <child link="arm_link" />
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
-    <limit lower="-1" upper="1" effort="1000" velocity="1000" />
+    <limit lower="-1" upper="0" effort="1000" velocity="1000" />
   </joint>
 
   <!-- <transmission name="$arm_transmission">

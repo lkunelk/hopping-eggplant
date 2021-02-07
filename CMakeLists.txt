@@ -19,7 +19,10 @@ link_directories(${GAZEBO_LIBRARY_DIRS})
 list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
 
 add_executable(my_controller src/main.cpp)
-target_link_libraries(my_controller ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} pthread)
+target_link_libraries(my_controller ${catkin_LIBRARIES})
 
-add_executable(listener src/listener.cpp)
-target_link_libraries(listener ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} pthread)
+add_executable(prism_ctrl src/prism_ctrl.cpp)
+target_link_libraries(prism_ctrl ${catkin_LIBRARIES})
+
+add_executable(base_contact src/base_contact.cpp)
+target_link_libraries(base_contact ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} pthread)
