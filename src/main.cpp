@@ -23,7 +23,8 @@ const float noLoadSpeed = 1235.7;  // rad/s
 ros::Publisher commandPub;
 ros::Publisher posPub, velPub, flywheelVelPub, armSpringPub;
 std_msgs::Float64 commandMsg;
-std_msgs::Float64 posMsg;
+// std_msgs::Float64 posMsg;
+geometry_msgs::Quaternion posMsg;
 std_msgs::Float64 velMsg;
 std_msgs::Float64 flywheelVelMsg;
 std_msgs::Float64 armSpringMsg;
@@ -70,11 +71,15 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   commandMsg.data = command;
   commandPub.publish(commandMsg);
   
-  // armSpringMsg.data = 0.0f;
-  // armSpringPub.publish(armSpringMsg);
+  armSpringMsg.data = 0.0f;
+  armSpringPub.publish(armSpringMsg);
   
   // Publish pendulum state for debug
-  posMsg.data = position;
+  // posMsg.data = msg.pose[3].position.z; // position;
+  posMsg.x = msg.pose[3].position.z;
+  posMsg.y = msg.pose[1].position.z;
+  posMsg.z = msg.twist[3].linear.z;
+  posMsg.w = msg.twist[1].linear.z;
   velMsg.data = velocity;
   flywheelVelMsg.data = flywheelVel / 1000.0; // so it fits nicely on graph
   
@@ -97,7 +102,7 @@ int main(int argc, char **argv)
   
   armSpringPub = n.advertise<std_msgs::Float64>("arm_spring/command", 1000);
   commandPub = n.advertise<std_msgs::Float64>("flywheel_controller/command", 1000);
-  posPub = n.advertise<std_msgs::Float64>("pendulum_pos", 1000);
+  posPub = n.advertise<geometry_msgs::Quaternion>("pendulum_pos", 1000);
   velPub = n.advertise<std_msgs::Float64>("pendulum_vel", 1000);
   flywheelVelPub = n.advertise<std_msgs::Float64>("pendulum_flywheel_vel", 1000);
 

@@ -23,12 +23,44 @@
       </inertial>
     </link>
     
+    <link name="arm2_link">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="0.10206"/>
+        <inertia ixx="0"
+                 ixy="0.00"
+                 ixz="0.00"
+                 iyy="10"
+                 iyz="0.00"
+                 izz="10"/>
+      </inertial>
+    </link>
+    
+    <joint name="arm_prism" type="prismatic">
+      <axis xyz="0 0 1" />
+      <parent link="arm_link" />
+      <child link="arm2_link" />
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
+      <limit lower="0" upper="0.013" effort="1000" velocity="1000" />
+    </joint>
+    
     <joint name="arm_to_flywheel" type="continuous">
       <axis xyz="0 0 1"/>
-      <parent link="arm_link"/>
+      <parent link="arm2_link"/>
       <child link="flywheel_link"/>
       <origin rpy="0 ${3.1415/2} 0" xyz="0 0 ${offset}"/>
     </joint>
+  
+    <transmission name="$arm_prism_transmission">
+      <type>transmission_interface/SimpleTransmission</type>
+      <actuator name="$arm_prism_motor">
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+      <joint name="arm_prism">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+    </transmission>
     
     <transmission name="$flywheel_transmission">
       <type>transmission_interface/SimpleTransmission</type>

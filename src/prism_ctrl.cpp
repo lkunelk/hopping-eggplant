@@ -33,28 +33,27 @@ void link_cb(const gazebo_msgs::LinkStates& msg) {
 void cb(const sensor_msgs::JointState& msg) {
 	uint8_t dstl_idx = 0;
 	for(; dstl_idx < NUM_DSTL0829; dstl_idx++) {
-		if(msg.position[0] + HALF_IN < DSTL0829[dstl_idx][0])
+		if(msg.position[0] < DSTL0829[dstl_idx][0])
 			break;
 	}
-	float Fsp = -Kspring * msg.position[0];
-	float Fm = -DSTL0829[std::min((int)dstl_idx, NUM_DSTL0829 - 1)][1];
-	bool enF = last_zvel < 0 || !last_collided;
+	// float Fsp = -Kspring * msg.position[0];
+	float Fm = DSTL0829[std::min((int)dstl_idx, NUM_DSTL0829 - 1)][1];
+	bool enF = last_zvel > 0 && last_collided;
 	if(enF) {
 		// if(msg.position[0] < -HALF_IN && Fm < Fsp) {
 		// 	commandMsg.data = 0.0f;
 		// }
 		// else {
-			commandMsg.data = Fm + Fsp;
+			commandMsg.data = Fm; // Fm + Fsp;
 		// }
 	}
 	else {
-		commandMsg.data = Fsp;
+		commandMsg.data = 0.0f; // Fsp;
 	}
 	
-	printf("%.3f\t%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.3f\n", msg.position[0], msg.position[1], last_zvel, Fm, Fsp, last_collided, commandMsg.data);
+	printf("%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.3f\n", msg.position[0], msg.position[1], last_zvel, Fm, last_collided, commandMsg.data);
 	commandPub.publish(commandMsg);
 	
-	// do the arm spring manually because it doesn't want to cooperate for some reason
 	springMsg.data = 0.0f; // -Kspring * msg.position[1];
 	springPub.publish(springMsg);
 }
