@@ -1,33 +1,41 @@
 #include "ros/ros.h"
 #include "gazebo_msgs/LinkStates.h"
 #include "std_msgs/Float64.h"
+#include "std_msgs/Bool.h"
 #include "geometry_msgs/Quaternion.h"
 #include "tf2/LinearMath/Quaternion.h"
 
 #include <iostream>
 #include <cmath>
+#include <cstring>
+
+// using namespace gazebo;
 
 const float P{1.0};
-const float I{0.1};
+const float I{0.05};
 const float D{0};
+const float G = -9.8f;
 
 // Motor Parameters
 const float stallTorque = 0.733;  // Nm
 const float noLoadSpeed = 1235.7;  // rad/s
 
 ros::Publisher commandPub;
-ros::Publisher posPub, velPub, flywheelVelPub;
+ros::Publisher posPub, velPub, flywheelVelPub, armSpringPub;
 std_msgs::Float64 commandMsg;
-std_msgs::Float64 posMsg;
+// std_msgs::Float64 posMsg;
+geometry_msgs::Quaternion posMsg;
 std_msgs::Float64 velMsg;
 std_msgs::Float64 flywheelVelMsg;
+std_msgs::Float64 armSpringMsg;
 
+bool last_collided = false;
 
 void chatterCallback(const gazebo_msgs::LinkStates& msg)
 {
-  geometry_msgs::Quaternion q = msg.pose[2].orientation;
-  geometry_msgs::Vector3 a = msg.twist[2].angular;
-  geometry_msgs::Vector3 flyA = msg.twist[3].angular;
+  geometry_msgs::Quaternion q = msg.pose[3].orientation;
+  geometry_msgs::Vector3 a = msg.twist[3].angular;
+  geometry_msgs::Vector3 flyA = msg.twist[4].angular;
   
   // convert to radians
   tf2::Quaternion myQ(q.x, q.y, q.z, q.w);
@@ -41,6 +49,18 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
     position *= -1;
   }
   
+  if(!last_collided) {
+    geometry_msgs::Vector3 v = msg.twist[1].linear;
+    geometry_msgs::Point p = msg.pose[1].position;
+    float vh = v.y; // sqrt(v.x * v.x = v.y * v.y); // although really only the rotation in the direction we control matters
+    float tf = p.z + v.z / G;
+    float vzf = -(fabs(v.z) + sqrt(fabs(G * p.z) * 2)); // COE
+    
+    float delta = atan2(vzf, vh) + M_PI_2; // rotate relative to vertical
+    position -= delta;
+    ROS_INFO("SET %.3f, %.3f, %.3f", vh, vzf, delta);
+  }
+  
   // compute and publish control command
   float command = P * position + I * velocity;
   float sign = (command > 0) - (command < 0);
@@ -51,8 +71,15 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   commandMsg.data = command;
   commandPub.publish(commandMsg);
   
+  armSpringMsg.data = 0.0f;
+  armSpringPub.publish(armSpringMsg);
+  
   // Publish pendulum state for debug
-  posMsg.data = position;
+  // posMsg.data = msg.pose[3].position.z; // position;
+  posMsg.x = msg.pose[3].position.z;
+  posMsg.y = msg.pose[1].position.z;
+  posMsg.z = msg.twist[3].linear.z;
+  posMsg.w = msg.twist[1].linear.z;
   velMsg.data = velocity;
   flywheelVelMsg.data = flywheelVel / 1000.0; // so it fits nicely on graph
   
@@ -60,24 +87,30 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   velPub.publish(velMsg);
   flywheelVelPub.publish(flywheelVelMsg);
   
-  ROS_INFO("ArmPos, ArmVel, FlyVel, Command: [%f, %f, %f, %f]", position, velocity, flywheelVel, command);
+  // ROS_INFO("ArmPos, ArmVel, FlyVel, Command: [%f, %f, %f, %f]", position, velocity, flywheelVel, command);
+}
+
+void base_contact_cb(const std_msgs::Bool msg) {
+  last_collided = msg.data;
 }
 
 int main(int argc, char **argv)
 {
-  
   ros::init(argc, argv, "my_node");
 
   ros::NodeHandle n;
-
+  
+  armSpringPub = n.advertise<std_msgs::Float64>("arm_spring/command", 1000);
   commandPub = n.advertise<std_msgs::Float64>("flywheel_controller/command", 1000);
-  posPub = n.advertise<std_msgs::Float64>("pendulum_pos", 1000);
+  posPub = n.advertise<geometry_msgs::Quaternion>("pendulum_pos", 1000);
   velPub = n.advertise<std_msgs::Float64>("pendulum_vel", 1000);
   flywheelVelPub = n.advertise<std_msgs::Float64>("pendulum_flywheel_vel", 1000);
 
   ros::Subscriber sub = n.subscribe("gazebo/link_states", 1000, chatterCallback);
+  ros::Subscriber sub_base_contact = n.subscribe("base_contact", 1000, base_contact_cb);
   
   ros::spin();
   
+  // Make sure to shut everything down.
   return 0;
 }
