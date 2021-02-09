@@ -37,9 +37,9 @@
       <inertia ixx="0"
                ixy="0.00"
                ixz="0.00"
-               iyy="10"
+               iyy="0.0000001"
                iyz="0.00"
-               izz="10"/>
+               izz="0.0000001"/>
     </inertial>
   </link>
   

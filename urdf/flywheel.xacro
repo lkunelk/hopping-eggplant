@@ -30,24 +30,58 @@
         <inertia ixx="0"
                  ixy="0.00"
                  ixz="0.00"
-                 iyy="10"
+                 iyy="0.000001"
                  iyz="0.00"
-                 izz="10"/>
+                 izz="0.000001"/>
+      </inertial>
+    </link>
+    <link name="arm3_link">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="0.001"/>
+        <inertia ixx="0"
+                 ixy="0.00"
+                 ixz="0.00"
+                 iyy="0.000001"
+                 iyz="0.00"
+                 izz="0.000001"/>
+      </inertial>
+    </link>
+    <link name="arm4_link">
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="0.001"/>
+        <inertia ixx="0"
+                 ixy="0.00"
+                 ixz="0.00"
+                 iyy="0.000001"
+                 iyz="0.00"
+                 izz="0.000001"/>
       </inertial>
     </link>
     
+    <joint name="arm_arm_prism_fix" type="fixed">
+      <parent link="arm_link"/>
+      <child link="arm4_link"/>
+    </joint>
+    
     <joint name="arm_prism" type="prismatic">
       <axis xyz="0 0 1" />
-      <parent link="arm_link" />
+      <parent link="arm4_link" />
       <child link="arm2_link" />
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
       <limit lower="0" upper="0.013" effort="1000" velocity="1000" />
     </joint>
     
+    <joint name="prism_arm_fix" type="fixed">
+      <parent link="arm2_link"/>
+      <child link="arm3_link"/>
+    </joint>
+    
     <joint name="arm_to_flywheel" type="continuous">
       <axis xyz="0 0 1"/>
-      <parent link="arm2_link"/>
+      <parent link="arm3_link"/>
       <child link="flywheel_link"/>
       <origin rpy="0 ${3.1415/2} 0" xyz="0 0 ${offset}"/>
     </joint>

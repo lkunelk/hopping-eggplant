@@ -16,8 +16,6 @@
   <xacro:property name="wheel_mass_kg" value=".037" />
   <xacro:property name="wheel_radius_m" value=".05" />
   <xacro:property name="wheel_length_m" value=".02" />
-  
-  <!-- <link name="world" /> -->
     
   <link name="base_link">
     <visual>
@@ -42,12 +40,12 @@
     </collision>
     <inertial>
       <mass value="${base_mass_kg}"/>
-      <inertia ixx="0.00"
+      <inertia ixx="0"
                ixy="0.00"
                ixz="0.00"
-               iyy="1"
+               iyy="0.00000001"
                iyz="0.00"
-               izz="1"/> <!-- ${base_mass_kg/12*(base_x_m**2 + base_z_m**2)} -->
+               izz="0.00000001"/> <!-- ${base_mass_kg/12*(base_x_m**2 + base_z_m**2)} -->
     </inertial>
     <!-- <sensor name="base_contact" type="contact">
       <contact>
