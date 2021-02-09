@@ -17,6 +17,32 @@
   <xacro:property name="wheel_radius_m" value=".05" />
   <xacro:property name="wheel_length_m" value=".02" />
     
+  <link name="world" />
+  
+  <link name="base0">
+    <inertial>
+      <mass value="0.0001"/>
+      <inertia ixx="0.00000001"
+               ixy="0.00"
+               ixz="0.00"
+               iyy="0.00000001"
+               iyz="0.00"
+               izz="0.00000001"/> <!-- ${base_mass_kg/12*(base_x_m**2 + base_z_m**2)} -->
+    </inertial>
+  </link>
+  
+  <link name="base1">
+    <inertial>
+      <mass value="0.0001"/>
+      <inertia ixx="0.00000001"
+               ixy="0.00"
+               ixz="0.00"
+               iyy="0.00000001"
+               iyz="0.00"
+               izz="0.00000001"/> <!-- ${base_mass_kg/12*(base_x_m**2 + base_z_m**2)} -->
+    </inertial>
+  </link>
+  
   <link name="base_link">
     <visual>
       <origin rpy="0 ${3.1415/2} 0" />
@@ -54,6 +80,30 @@
       <update_rate>60</update_rate>
     </sensor> -->
   </link>
+  
+  <joint name="world_base_theta" type="continuous">
+    <parent link="world" />
+    <child link="base0" />
+    <axis xyz="1 0 0" />
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <limit effort="1000" velocity="1000" />
+  </joint>
+  
+  <joint name="world_base_z" type="prismatic">
+    <parent link="base0" />
+    <child link="base1" />
+    <axis xyz="0 0 1" />
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <limit lower="-1000" upper="1000" effort="1000" velocity="1000" />
+  </joint>
+  
+  <joint name="world_base_y" type="prismatic">
+    <parent link="base1" />
+    <child link="base_link" />
+    <axis xyz="0 1 0" />
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <limit lower="-1000" upper="1000" effort="1000" velocity="1000" />
+  </joint>
   
   <xacro:arm length="${arm_length_m}"
              width="${arm_width_m}"

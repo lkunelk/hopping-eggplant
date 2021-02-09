@@ -84,19 +84,19 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   geometry_msgs::Vector3 flyA = msg.twist[idxOf(msg.name, FLY_LINK_NAME)].angular;
   
   // convert to radians
-  // tf2::Quaternion myQ(q.x, q.y, q.z, q.w);
-  // float position = myQ.getAngle();
-  auto fpos = msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position, bpos = msg.pose[idxOf(msg.name, BASE_LINK_NAME)].position;
-  tf2::Vector3 dpos = (tf2::Vector3(fpos.x, fpos.y, fpos.z) - tf2::Vector3(bpos.x, bpos.y, bpos.z)).normalized();
-  float position = acos(dpos.getZ());
+  tf2::Quaternion myQ(q.x, q.y, q.z, q.w);
+  float position = myQ.getAngle();
+  // auto fpos = msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position, bpos = msg.pose[idxOf(msg.name, BASE_LINK_NAME)].position;
+  // tf2::Vector3 dpos = (tf2::Vector3(fpos.x, fpos.y, fpos.z) - tf2::Vector3(bpos.x, bpos.y, bpos.z)).normalized();
+  // float position = acos(dpos.getZ());
   float velocity = a.x;  // measured wrt world's x axis
   float flywheelVel = flyA.x;  // measured wrt world's x axis
   
   
-  // if (q.x < 0)  // leaning in the clockwise direction
-  // {
-  //   position *= -1;
-  // }
+  if (q.x < 0)  // leaning in the clockwise direction
+  {
+    position *= -1;
+  }
   
   if(!last_collided) {
     geometry_msgs::Vector3 v = msg.twist[idxOf(msg.name, BASE_LINK_NAME)].linear;
@@ -112,15 +112,16 @@ void chatterCallback(const gazebo_msgs::LinkStates& msg)
   // if(last_collided)
   //   ROS_INFO("%.3f", last_joint_states.velocity[1]);
   
-  if(last_joint_states_valid && (1 || last_joint_states.velocity[idxOf(last_joint_states.name, SPRING_JOINT_NAME)] > 0)) {
-    // second joint expanding: point in target direction
-    float delta = msg.pose[idxOf(msg.name, TRACK_LINK_NAME)].position.y - msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position.y;
-    position += sgn(delta) * fmin(fabs(delta) / P_TAKEOFF, M_PI_4);
-    ROS_INFO("SET %.3f, %.3f, %.3f, %.3f", position, delta, last_land_angle, last_joint_states.velocity[idxOf(last_joint_states.name, FLY_JOINT_NAME)]);
-  }
-  else {
-    position -= last_land_angle;
-  }
+  // if(last_collided && last_joint_states_valid && last_joint_states.velocity[idxOf(last_joint_states.name, SPRING_JOINT_NAME)] > 0) {
+  //   // second joint expanding: point in target direction
+  //   float delta = msg.pose[idxOf(msg.name, TRACK_LINK_NAME)].position.y - msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position.y;
+  //   position += sgn(delta) * fmin(fabs(delta) / P_TAKEOFF, M_PI_4);
+  // }
+  // else {
+  //   position -= last_land_angle;
+  // }
+  if(last_joint_states_valid)
+    ROS_INFO("SET %.3f, %.3f, %.3f", position, last_land_angle, last_joint_states.velocity[idxOf(last_joint_states.name, FLY_JOINT_NAME)]); 
   
   // compute and publish control command
   float command = P * position + I * velocity;
