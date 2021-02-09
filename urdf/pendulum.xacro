@@ -40,7 +40,7 @@
     </collision>
     <inertial>
       <mass value="${base_mass_kg}"/>
-      <inertia ixx="0"
+      <inertia ixx="0.00000001"
                ixy="0.00"
                ixz="0.00"
                iyy="0.00000001"
