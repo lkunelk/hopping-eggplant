@@ -121,7 +121,7 @@ void linkStateCallback(const gazebo_msgs::LinkStates& msg)
     // second joint expanding: point in target direction
     float delta = msg.pose[idxOf(msg.name, TRACK_LINK_NAME)].position.y - msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position.y;
     armAnglPos += sgn(delta) * fmin(fabs(delta) / P_TAKEOFF, M_PI_4);
-    ROS_INFO("SET %.3f, %.3f, %.3f, %.3f", delta, armAnglPos, last_land_angle, last_joint_states.effort[idxOf(last_joint_states.name, PRISM_JOINT_NAME)]); 
+    ROS_INFO("SET %.3f, %.3f, %.3f, %.3f", delta, armAnglPos, last_land_angle, flywheelVel); 
   }
   else {
     armAnglPos += last_land_angle;
