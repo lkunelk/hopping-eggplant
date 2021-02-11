@@ -3,7 +3,6 @@
 #include "gazebo_msgs/LinkStates.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Bool.h"
-// #include <boost>
 #include <boost/circular_buffer.hpp>
 #include "util.hpp"
 #include "consts.hpp"

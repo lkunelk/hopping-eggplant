@@ -4,15 +4,17 @@
 #include <gazebo/msgs/msgs.hh>
 #include <gazebo/gazebo_client.hh>
 #include "std_msgs/Bool.h"
+#include <boost/circular_buffer.hpp>
 
-#define NUM_CONTACT_BUF 32
 const std::string BASE_LINK_NAME("robot::base_link::base_link_fixed_joint_lump__base_collision_collision");
 const std::string WORLD_LINK_NAME("ground_plane::link::collision");
-bool contact_buffer[NUM_CONTACT_BUF] = { 0 };
-uint32_t contact_idx = 0;
+
+boost::circular_buffer<float> contact_buffer(32);
 bool collided_() {
   uint8_t j = 0;
-  for(uint8_t i = 0; i < NUM_CONTACT_BUF; i++, j += contact_buffer[(contact_idx + i) & (NUM_CONTACT_BUF - 1)]);
+  for(bool contacted : contact_buffer) {
+    j += contacted;
+  }
   return j > 1;
 }
 gazebo::transport::SubscriberPtr sub; // what. so if this isn't scoped the subscription just gets garbage-collected? Eugh. How?!
@@ -20,18 +22,16 @@ ros::Publisher pub;
 std_msgs::Bool contact_msg;
 
 void tick(ConstContactsPtr &msg) {
-  bool* contact_ = &contact_buffer[(++contact_idx) & (NUM_CONTACT_BUF - 1)];
   for(uint32_t i = 0; i < msg->contact_size(); i++) {
     auto contact = msg->contact(i);
     if((BASE_LINK_NAME.compare(contact.collision1()) == 0 && WORLD_LINK_NAME.compare(contact.collision2()) == 0) ||
       (WORLD_LINK_NAME.compare(contact.collision1()) == 0 && BASE_LINK_NAME.compare(contact.collision2()) == 0)) {
       // collision with base link: usual physics
-      ROS_INFO("CONTACT %d %ds", contact_idx++, msg->time().nsec());
-      *contact_ = true;
+      contact_buffer.push_back(true);
       return;
     }
   }
-  *contact_ = false;
+  contact_buffer.push_back(false);
 }
 
 void contactCallback(ConstContactsPtr &msg) {
