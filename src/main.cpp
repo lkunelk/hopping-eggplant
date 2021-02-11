@@ -5,6 +5,8 @@
 #include "std_msgs/Bool.h"
 #include "geometry_msgs/Quaternion.h"
 #include "tf2/LinearMath/Quaternion.h"
+#include "util.hpp"
+#include "consts.hpp"
 
 #include <iostream>
 #include <cmath>
@@ -13,7 +15,7 @@
 const float P = 1.00f;
 const float I = 0.05f;
 const float D = 0.00f;
-const float G = -9.8f;
+const float G = 9.8f;
 
 const float K_ARM_SPRING = 385.0f; // N/m
 // T0 @300g ~ 0.175s
@@ -63,23 +65,12 @@ float sgn(float x) {
 
 float last_land_angle = 0.0f;
 const float P_TAKEOFF = 1.0f; // takeoff angle P controller
-const std::string
-  BASE_LINK_NAME("robot::base_link"),
-  ARM_LINK_NAME("robot::arm_link"),
-  FLY_LINK_NAME("robot::flywheel_link"),
-  TRACK_LINK_NAME("tracker::tracking_dot"),
-  
-  PRISM_JOINT_NAME("arm_prism"),
-  SPRING_JOINT_NAME("arm_spring"),
-  FLY_JOINT_NAME("arm_to_flywheel");
 
-int idxOf(const std::vector<std::string> a, const std::string& b) {
-  for(int i = 0; i < a.size(); i++) {
-    if(a[i].compare(b) == 0)
-      return i;
-  }
-  return -1;
-}
+// #define ZVEL_NUM 32
+// float zvel_buf[ZVEL_NUM] = { 0 };
+// uint8_t zvel_buf_idx = 0;
+// bool zvel_buf_full
+
 void linkStateCallback(const gazebo_msgs::LinkStates& msg)
 {
   geometry_msgs::Quaternion q = msg.pose[idxOf(msg.name, ARM_LINK_NAME)].orientation;
@@ -99,29 +90,43 @@ void linkStateCallback(const gazebo_msgs::LinkStates& msg)
     armAnglPos *= -1;
   
   if(!last_collided) {
-    geometry_msgs::Vector3 v = msg.twist[idxOf(msg.name, BASE_LINK_NAME)].linear;
-    geometry_msgs::Point p = msg.pose[idxOf(msg.name, BASE_LINK_NAME)].position;
+    geometry_msgs::Vector3 v = msg.twist[idxOf(msg.name, FLY_LINK_NAME)].linear;
+    geometry_msgs::Point p = msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position;
     float vh = v.y; // sqrt(v.x * v.x = v.y * v.y); // although really only the rotation in the direction we control matters
-    float tf = p.z + v.z / G;
-    float vzf = -(fabs(v.z) + sqrt(fabs(G * p.z) * 2)); // COE
-    
-    last_land_angle = atan2(vzf, vh) + M_PI_2; // rotate relative to vertical
-    // ROS_INFO("SET %.3f, %.3f, %.3f", vh, vzf, last_land_angle);
+    // float tf = p.z + v.z / G;
+    float pzmax = p.z + fabs(v.z * v.z / G / 2);
+    if(pzmax > 0) {
+      if(fabs(vh) > NUM_EPS) {
+        float vzf = sqrt(2 * fabs(G * (pzmax - std::min(ARM_LENGTH, pzmax)))); // COE
+        // iterated root finding to find the actual height and landing angle (estimate without compensation can be quite bad for shallow landing angles)
+        const uint16_t MAX_VZ_ITER = 32;
+        for(uint16_t i = 0; i < MAX_VZ_ITER; i++) {
+          vzf = sqrt(2 * fabs(G * (pzmax - fabs(vzf) * ARM_LENGTH / sqrt(vzf * vzf + vh * vh))));
+        }
+        
+        last_land_angle = atan2(vzf, vh) - M_PI_2; // rotate relative to vertical
+        // ROS_INFO("SET %.3f, %.3f, %.3f, %.3f, %.3f", p.z, vh, v.z, vzf, pzmax);
+      }
+      else {
+        last_land_angle = 0.0f; // no horizontal velocity: landing perfectly vertical
+      }
+    }
+    // else {} // the robot is underground and ain't getting back up
   }
   
   // if(last_collided)
   //   ROS_INFO("%.3f", last_joint_states.velocity[1]);
   
-  // if(last_collided && last_joint_states_valid && last_joint_states.velocity[idxOf(last_joint_states.name, SPRING_JOINT_NAME)] > 0) {
-  //   // second joint expanding: point in target direction
-  //   float delta = msg.pose[idxOf(msg.name, TRACK_LINK_NAME)].position.y - msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position.y;
-  //   armAnglPos += sgn(delta) * fmin(fabs(delta) / P_TAKEOFF, M_PI_4);
-  // }
-  // else {
-  //   armAnglPos -= last_land_angle;
-  // }
-  if(last_joint_states_valid)
-    ROS_INFO("SET %.3f, %.3f, %.3f", armAnglPos, last_land_angle, last_joint_states.velocity[idxOf(last_joint_states.name, FLY_JOINT_NAME)]); 
+  if(last_collided && last_joint_states_valid && last_joint_states.effort[idxOf(last_joint_states.name, PRISM_JOINT_NAME)] > 1E-3) {
+    // second joint expanding: point in target direction
+    float delta = msg.pose[idxOf(msg.name, TRACK_LINK_NAME)].position.y - msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position.y;
+    armAnglPos += sgn(delta) * fmin(fabs(delta) / P_TAKEOFF, M_PI_4);
+    ROS_INFO("SET %.3f, %.3f, %.3f, %.3f", delta, armAnglPos, last_land_angle, last_joint_states.effort[idxOf(last_joint_states.name, PRISM_JOINT_NAME)]); 
+  }
+  else {
+    armAnglPos += last_land_angle;
+  }
+  // if(last_joint_states_valid)
   
   // compute and publish control command
   float command = P * armAnglPos + I * armAnglVel;

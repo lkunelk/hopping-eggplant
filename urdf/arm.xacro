@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
-<xacro:macro name="arm" params="length width linear_density">
+  <xacro:macro name="arm" params="length width linear_density">
   
   <xacro:property name="mass" value="${linear_density * length}" />
   
@@ -34,7 +34,7 @@
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!-- holds the mass of the solenoid, DSTL-0829-12 -->
       <mass value="0.001"/>
-      <inertia ixx="0"
+      <inertia ixx="0.0000001"
                ixy="0.00"
                ixz="0.00"
                iyy="0.0000001"
@@ -56,9 +56,12 @@
     </inertial>
   </link> -->
   
-  <joint name="base_to_arm" type="fixed">
-    <parent link="base_link"/>
-    <child link="arm0_link"/>
+  <joint name="base_free_theta" type="continuous">
+    <parent link="base_link" />
+    <child link="arm0_link" />
+    <axis xyz="1 0 0" />
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <limit effort="1000" velocity="1000" />
   </joint>
   
   <joint name="arm_spring" type="prismatic">

@@ -30,7 +30,8 @@
         args="-z 0.1
               -urdf
               -model robot
-              -param robot_description"/> <!-- 
+              -param robot_description
+              -J robot::base_free_theta 0.8"/> <!-- 
               -R 1.8 -->
   
   <node name="tracker_spawner"

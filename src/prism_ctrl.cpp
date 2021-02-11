@@ -3,6 +3,10 @@
 #include "gazebo_msgs/LinkStates.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Bool.h"
+// #include <boost>
+#include <boost/circular_buffer.hpp>
+#include "util.hpp"
+#include "consts.hpp"
 
 #include <algorithm>
 
@@ -25,9 +29,9 @@ float relu(float x) {
 	return x > 0 ? x : 0;
 }
 
-float last_zvel = 0.0f;
+boost::circular_buffer<float> zvel_buf(32);
 void link_cb(const gazebo_msgs::LinkStates& msg) {
-	last_zvel = msg.twist[3].linear.z;
+	zvel_buf.push_back(msg.twist[idxOf(msg.name, FLY_LINK_NAME)].linear.z);
 }
 
 void cb(const sensor_msgs::JointState& msg) {
@@ -38,7 +42,18 @@ void cb(const sensor_msgs::JointState& msg) {
 	}
 	// float Fsp = -Kspring * msg.position[0];
 	float Fm = DSTL0829[std::min((int)dstl_idx, NUM_DSTL0829 - 1)][1];
-	bool enF = last_zvel > 0 && last_collided;
+	
+	bool enF = last_collided;
+	if(!zvel_buf.full())
+		enF = false;
+	else {
+		// moving average filter, consider better FIR filters
+		float zvel_filt = 0.0f;
+		for(float zvel : zvel_buf) {
+			zvel_filt += zvel / zvel_buf.size();
+		}
+		enF &= zvel_filt > 0;
+	}
 	if(enF) {
 		// if(msg.position[0] < -HALF_IN && Fm < Fsp) {
 		// 	commandMsg.data = 0.0f;
@@ -51,7 +66,7 @@ void cb(const sensor_msgs::JointState& msg) {
 		commandMsg.data = 0.0f; // Fsp;
 	}
 	
-	printf("%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.3f\n", msg.position[0], msg.position[1], last_zvel, Fm, last_collided, commandMsg.data);
+	printf("%.3f\t%.3f\t%.3f\t%d\t%.3f\n", msg.position[0], msg.position[1], Fm, last_collided, commandMsg.data);
 	commandPub.publish(commandMsg);
 	
 	springMsg.data = 0.0f; // -Kspring * msg.position[1];
