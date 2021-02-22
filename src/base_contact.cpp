@@ -6,7 +6,7 @@
 #include "std_msgs/Bool.h"
 #include <boost/circular_buffer.hpp>
 
-const std::string BASE_LINK_NAME("robot::base_link::base_link_fixed_joint_lump__base_collision_collision");
+const std::string BASE_LINK_NAME("robot::base_link::base_link_collision");
 const std::string WORLD_LINK_NAME("ground_plane::link::collision");
 
 boost::circular_buffer<float> contact_buffer(32);

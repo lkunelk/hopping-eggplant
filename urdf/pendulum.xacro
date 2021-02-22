@@ -32,9 +32,9 @@
   </link> -->
   
   <gazebo reference="base_link">
-    <mu1>0.2</mu1>
-    <mu2>0.2</mu2>
-    <kp>300</kp>
+    <mu1>200</mu1>
+    <mu2>200</mu2>
+    <!-- <kp>30000</kp> -->
     <material>Gazebo/Red</material>
   </gazebo>
   <link name="base_link">
@@ -44,12 +44,12 @@
         <box size="0.05 0.05 0.01" />
       </geometry>
     </visual>
-    <collision name="base_collision">
+    <collision>
       <!-- <origin rpy="0 ${3.1415/2} 0" /> -->
       <geometry>
         <box size="0.05 0.05 0.01" />
       </geometry>
-      <surface>
+      <!-- <surface>
         <contact>
           <ode>
             <soft_cfm>0.3</soft_cfm>
@@ -57,11 +57,11 @@
         </contact>
         <friction>
           <ode>
-            <mu>200.0</mu>
-            <mu2>200.0</mu2>
+            <mu>200</mu>
+            <mu2>200</mu2>
           </ode>
         </friction>
-      </surface>
+      </surface> -->
     </collision>
     <inertial>
       <mass value="${base_mass_kg}"/>
