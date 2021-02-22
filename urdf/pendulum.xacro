@@ -31,6 +31,12 @@
     </inertial>
   </link> -->
   
+  <gazebo reference="base_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <kp>300</kp>
+    <material>Gazebo/Red</material>
+  </gazebo>
   <link name="base_link">
     <visual>
       <!-- <origin rpy="0 ${3.1415/2} 0" /> -->
@@ -44,6 +50,11 @@
         <box size="0.05 0.05 0.01" />
       </geometry>
       <surface>
+        <contact>
+          <ode>
+            <soft_cfm>0.3</soft_cfm>
+          </ode>
+        </contact>
         <friction>
           <ode>
             <mu>200.0</mu>
