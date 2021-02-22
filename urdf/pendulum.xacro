@@ -35,7 +35,6 @@
     <mu1>200</mu1>
     <mu2>200</mu2>
     <!-- <kp>30000</kp> -->
-    <material>Gazebo/Red</material>
   </gazebo>
   <link name="base_link">
     <visual>
