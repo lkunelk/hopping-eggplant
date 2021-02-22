@@ -36,6 +36,7 @@
     <mu2>200</mu2>
     <!-- <kp>30000</kp> -->
   </gazebo>
+  
   <link name="base_link">
     <visual>
       <!-- <origin rpy="0 ${3.1415/2} 0" /> -->
@@ -119,6 +120,13 @@
     <child link="base_link"/>
     <origin rpy="0 0 0" xyz="0 0 ${2 * base_z_m - 1}"/>
   </joint> -->
+  
+  <gazebo reference="arm_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <kp>300</kp>
+    <material>Gazebo/Red</material>
+  </gazebo>
   
   <!-- Add ROS plugin so we can interact with our robot -->
   <gazebo>
