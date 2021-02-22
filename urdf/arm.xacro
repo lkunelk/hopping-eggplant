@@ -11,12 +11,12 @@
         <box size="${width} ${width} ${length}"/>
       </geometry>
     </visual>
-    <!--collision>
+    <collision>
       <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
       <geometry>
         <box size="${width} ${width} ${length}"/>
       </geometry>
-    </collision-->
+    </collision>
     <inertial>
       <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
       <mass value="${linear_density * length}"/>
