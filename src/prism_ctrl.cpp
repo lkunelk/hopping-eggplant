@@ -33,14 +33,26 @@ void link_cb(const gazebo_msgs::LinkStates& msg) {
 	zvel_buf.push_back(msg.twist[idxOf(msg.name, FLY_LINK_NAME)].linear.z);
 }
 
+const float // ARM_LENGTH = 0.0127f, // m
+            PISTON_LENGTH = 0.0127f, // m
+            MAX_ANGV = 10.472f, // rad/s, 0.1s/60deg 
+            T_STALL = 7.2f, // N-m
+            P_PARAM = 0.01f; // N-m/rad, arbitrary but small, compensate by this
 void cb(const sensor_msgs::JointState& msg) {
-	uint8_t dstl_idx = 0;
-	for(; dstl_idx < NUM_DSTL0829; dstl_idx++) {
-		if(msg.position[0] < DSTL0829[dstl_idx][0])
-			break;
-	}
+	// uint8_t dstl_idx = 0;
+	// for(; dstl_idx < NUM_DSTL0829; dstl_idx++) {
+	// 	if(msg.position[idxOf(msg.name, PRISM_JOINT_NAME)] < DSTL0829[dstl_idx][0])
+	// 		break;
+	// }
+	// int joint_idx = idxOf(msg.name, PRISM_JOINT_NAME);
+	// float pos = fmin(fmax(msg.position[joint_idx], -ARM_LENGTH), ARM_LENGTH),
+	//       angle = asin(pos / ARM_LENGTH),
+	//       v = msg.twist[joint_idx].linear.z
+	//       angV = fabs(pos) == ARM_LENGTH ? 0 : v / cos(angle); // check limit hit
+	
 	// float Fsp = -Kspring * msg.position[0];
-	float Fm = DSTL0829[std::min((int)dstl_idx, NUM_DSTL0829 - 1)][1] * 2;
+	// float Fm = T_STALL * fmax(0.0f, cos(angle) - fabs(v) / MAX_ANGV); // DSTL0829[std::min((int)dstl_idx, NUM_DSTL0829 - 1)][1] * 2;
+	float Fm = 0.0f;
 	
 	bool enF = last_collided;
 	if(!zvel_buf.full())
@@ -58,11 +70,11 @@ void cb(const sensor_msgs::JointState& msg) {
 		// 	commandMsg.data = 0.0f;
 		// }
 		// else {
-			commandMsg.data = Fm; // Fm + Fsp;
+			commandMsg.data = 10.0f; // T_STALL / P_PARAM; // -Fm; // Fm + Fsp;
 		// }
 	}
 	else {
-		commandMsg.data = 0.0f; // Fsp;
+		commandMsg.data = -10.0f; // -T_STALL / P_PARAM; // Fsp;
 	}
 	
 	printf("%.3f\t%.3f\t%.3f\t%d\t%.3f\n", msg.position[0], msg.position[1], Fm, last_collided, commandMsg.data);

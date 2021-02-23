@@ -96,16 +96,6 @@
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
   </transmission>
-  
-  <transmission name="$arm_prism_transmission">
-    <type>transmission_interface/SimpleTransmission</type>
-    <actuator name="$arm_prism_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-    <joint name="arm_prism">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-  </transmission>
 
 </xacro:macro>
 </robot>
