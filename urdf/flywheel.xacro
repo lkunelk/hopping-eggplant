@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
-  <xacro:macro name="flywheel" params="radius length offset mass motor_mass">
+  <xacro:macro name="flywheel" params="radius length mass motor_mass arm_length solenoid_mass"> <!-- offset -->
     <link name="flywheel_link">
       <visual>
         <geometry>
@@ -13,7 +13,7 @@
         </geometry>
       </collision> -->
       <inertial>
-        <mass value="${mass + motor_mass}"/>
+        <mass value="${mass + motor_mass + solenoid_mass}"/>
         <inertia ixx="${1/12*mass*(3*radius**2 + length**2)}"
                  ixy="0.0"
                  ixz="0.0"
@@ -26,7 +26,7 @@
     <link name="arm2_link">
       <inertial>
         <origin rpy="0 0 0" xyz="0 0 0"/>
-        <mass value="0.10206"/>
+        <mass value="0.001"/>
         <inertia ixx="0.000001"
                  ixy="0.00"
                  ixz="0.00"
@@ -42,14 +42,14 @@
       <child link="arm2_link" />
       <origin rpy="0 0 0" xyz="0 0 0"/>
       <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
-      <limit lower="0" upper="0.013" effort="1000" velocity="1000" />
+      <limit lower="0.006" upper="0.013" effort="1000" velocity="1000" />
     </joint>
     
     <joint name="arm_to_flywheel" type="continuous">
       <axis xyz="0 0 1"/>
       <parent link="arm2_link"/>
       <child link="flywheel_link"/>
-      <origin rpy="0 ${3.1415/2} 0" xyz="0 0 ${offset}"/>
+      <origin rpy="0 ${3.1415/2} 0" xyz="0 0 ${arm_length}"/> <!-- ${offset} -->
     </joint>
   
     <transmission name="$arm_prism_transmission">

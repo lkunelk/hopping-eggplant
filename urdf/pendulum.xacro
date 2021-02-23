@@ -14,6 +14,7 @@
   
   <xacro:property name="motor_mass_kg" value=".080" />
   <xacro:property name="wheel_mass_kg" value=".037" />
+  <xacro:property name="solenoid_mass_kg" value="${.10206 * 2}" />
   <xacro:property name="wheel_radius_m" value=".05" />
   <xacro:property name="wheel_length_m" value=".02" />
     
@@ -111,22 +112,17 @@
 
   <xacro:flywheel length="${wheel_length_m}"
                   radius="${wheel_radius_m}"
-                  offset="${arm_length_m}"
                   mass="${wheel_mass_kg}"
-                  motor_mass="${motor_mass_kg}"/>
+                  motor_mass="${motor_mass_kg}"
+                  arm_length="${arm_length_m}"
+                  solenoid_mass="${solenoid_mass_kg}" />
+                  <!-- offset="${arm_length_m}" -->
   
   <!-- <joint name="fixed" type="fixed">
     <parent link="world"/>
     <child link="base_link"/>
     <origin rpy="0 0 0" xyz="0 0 ${2 * base_z_m - 1}"/>
   </joint> -->
-  
-  <gazebo reference="arm_link">
-    <mu1>0.2</mu1>
-    <mu2>0.2</mu2>
-    <kp>300</kp>
-    <material>Gazebo/Red</material>
-  </gazebo>
   
   <!-- Add ROS plugin so we can interact with our robot -->
   <gazebo>

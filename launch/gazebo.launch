@@ -30,8 +30,8 @@
         args="-z 0.1
               -urdf
               -model robot
-              -param robot_description
-              -J robot::base_free_theta 0.8"/> <!-- 
+              -param robot_description" />
+              <!-- -J robot::base_free_theta 0.8"/> --><!--
               -R 1.8 -->
   
   <node name="tracker_spawner"
@@ -49,23 +49,23 @@
             file="$(find pendulum)/config/joints.yaml" />
   
   <!-- Base link contact listener -->
-  <node name="base_contact"
+  <!-- <node name="base_contact"
         pkg="pendulum"
         respawn="true"
         type="base_contact"
-    />
+    /> -->
   
   <!-- Spawn controllers -->
-  <!-- <node name="pend_main_ctrl"
+  <node name="pend_main_ctrl"
         pkg="pendulum"
         respawn="true"
         type="my_controller"
-    /> -->
-  <node name="prism_ctrl"
+    />
+  <!-- <node name="prism_ctrl"
       pkg="pendulum"
       respawn="true"
       type="prism_ctrl"
-  />
+  /> -->
   
   <node name="bot_controller_spawner"
         pkg="controller_manager"

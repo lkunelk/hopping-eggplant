@@ -9,6 +9,9 @@
     <include>
       <uri>model://ground_plane</uri>
     </include>
+    <!-- <include>
+      <uri>model://pendulum</uri>
+    </include> -->
     <gui>
       <camera name="user_camera">
         <pose>1.5 0 0.1 0 0.08 3.141592</pose>
@@ -17,11 +20,11 @@
     
     <physics name="ode_cfm_0p3" type="ode" default="true">
       <real_time_update_rate>50</real_time_update_rate>
-      <ode>
+      <!-- <ode>
         <constraints>
           <cfm>0.3</cfm>
         </constraints>
-      </ode>
+      </ode> -->
     </physics>
   </world>
 </sdf>

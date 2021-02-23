@@ -13,7 +13,7 @@
 #include <cstring>
 
 const float P = 1.00f;
-const float I = 0.05f;
+const float I = 0.008f;
 const float D = 0.00f;
 const float G = 9.8f;
 
@@ -80,6 +80,7 @@ void linkStateCallback(const gazebo_msgs::LinkStates& msg)
   // get robot state
   tf2::Quaternion myQ(q.x, q.y, q.z, q.w);
   float armAnglPos = myQ.getAngle();
+  float armAnglOffset = 0.0f;
   // auto fpos = msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position, bpos = msg.pose[idxOf(msg.name, BASE_LINK_NAME)].position;
   // tf2::Vector3 dpos = (tf2::Vector3(fpos.x, fpos.y, fpos.z) - tf2::Vector3(bpos.x, bpos.y, bpos.z)).normalized();
   // float position = acos(dpos.getZ());
@@ -120,16 +121,17 @@ void linkStateCallback(const gazebo_msgs::LinkStates& msg)
   if(last_collided && last_joint_states_valid && last_joint_states.effort[idxOf(last_joint_states.name, PRISM_JOINT_NAME)] > 1E-3) {
     // second joint expanding: point in target direction
     float delta = msg.pose[idxOf(msg.name, TRACK_LINK_NAME)].position.y - msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position.y;
-    armAnglPos += sgn(delta) * fmin(fabs(delta) / P_TAKEOFF, M_PI_4);
-    ROS_INFO("SET %.3f, %.3f, %.3f, %.3f", delta, armAnglPos, last_land_angle, flywheelVel); 
+    armAnglOffset += sgn(delta) * fmin(fabs(delta) / P_TAKEOFF, M_PI_4);
+    ROS_INFO("SET %.3f, %.3f, %.3f, %.3f", delta, armAnglOffset, last_land_angle, flywheelVel); 
   }
   else {
-    armAnglPos += last_land_angle;
+    armAnglOffset += last_land_angle;
   }
+  
   // if(last_joint_states_valid)
   
   // compute and publish control command
-  float command = P * armAnglPos + I * armAnglVel;
+  float command = P * (armAnglPos + armAnglOffset) + I * armAnglVel;
   float sign = (command > 0) - (command < 0);
   float maxTorque = fmax(0.0f, (1 - std::abs(flywheelVel) / noLoadSpeed) * stallTorque);
   
@@ -143,10 +145,10 @@ void linkStateCallback(const gazebo_msgs::LinkStates& msg)
   armSpringPub.publish(armSpringMsg);
   
   // Publish pendulum state for debug
-  posMsg.x = msg.pose[3].position.z;
-  posMsg.y = msg.pose[1].position.z;
-  posMsg.z = msg.twist[3].linear.z;
-  posMsg.w = msg.twist[1].linear.z;
+  posMsg.x = msg.pose[idxOf(msg.name, ARM2_LINK_NAME)].position.z;
+  posMsg.y = msg.pose[idxOf(msg.name, BASE_LINK_NAME)].position.z;
+  posMsg.z = msg.twist[idxOf(msg.name, ARM2_LINK_NAME)].linear.z;
+  posMsg.w = last_collided;
   velMsg.data = armAnglVel;
   flywheelVelMsg.data = flywheelVel / 1000.0; // so it fits nicely on graph
   
