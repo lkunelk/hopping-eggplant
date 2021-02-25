@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
 <launch>
+
+  <!-- delete current model in gazebo -->
+  <!-- rosservice call gazebo/delete_model '{model_name: robot}'-->
+  <node pkg="rosservice" type="rosservice" name="del_model" args="call --wait gazebo/delete_model '{model_name: robot}'" />
+
   <!-- our xacro/urdf model -->
   <arg name="model" value="$(find pendulum)/urdf/pendulum.xacro"/>
 
@@ -19,7 +24,7 @@
               -urdf
               -model robot
               -param robot_description"/>
- 
+
   <!-- load multiple values stored in .yaml file into global parameters -->
   <!-- parameters store motor controller configurations -->
   <rosparam command="load"
@@ -30,7 +35,8 @@
         pkg="controller_manager"
         type="spawner"
         args="joint_state_controller
-              flywheel_controller" />
+              flywheel_controller
+              arm_controller" />
 </launch>
 
 

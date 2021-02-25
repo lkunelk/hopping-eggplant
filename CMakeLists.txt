@@ -10,6 +10,19 @@ catkin_package()
 ## Your package locations should be listed before other locations
 include_directories(include ${catkin_INCLUDE_DIRS})
 
+## gazebo
+
+find_package(gazebo REQUIRED)
+
+include_directories(${GAZEBO_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})
+list(APPEND CMAKE_CXX_FLAGS "${GAZEBO_CXX_FLAGS}")
+
 add_executable(my_controller src/main.cpp)
 target_link_libraries(my_controller ${catkin_LIBRARIES})
 
+add_executable(prism_ctrl src/prism_ctrl.cpp)
+target_link_libraries(prism_ctrl ${catkin_LIBRARIES})
+
+add_executable(base_contact src/base_contact.cpp)
+target_link_libraries(base_contact ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} pthread)

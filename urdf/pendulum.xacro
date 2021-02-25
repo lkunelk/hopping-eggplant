@@ -3,7 +3,7 @@
   <xacro:include filename="$(find pendulum)/urdf/arm.xacro" />
   <xacro:include filename="$(find pendulum)/urdf/flywheel.xacro" />
   
-  <xacro:property name="base_mass_kg" value="100" />
+  <xacro:property name="base_mass_kg" value="0.001" />
   <xacro:property name="base_x_m" value=".05" />
   <xacro:property name="base_y_m" value=".05" />
   <xacro:property name="base_z_m" value=".06" />
@@ -12,33 +12,49 @@
   <xacro:property name="arm_length_m" value=".10" />
   <xacro:property name="arm_width_m" value=".02" />
   
-  <xacro:property name="motor_mass_kg" value=".186" />
+  <xacro:property name="motor_mass_kg" value=".080" />
   <xacro:property name="wheel_mass_kg" value=".037" />
   <xacro:property name="wheel_radius_m" value=".05" />
   <xacro:property name="wheel_length_m" value=".02" />
   
-  <link name="world" />
+  <!-- <link name="world" /> -->
     
   <link name="base_link">
     <visual>
+      <origin rpy="0 ${3.1415/2} 0" />
       <geometry>
-        <box size="${base_x_m} ${base_y_m} ${base_z_m}"/>
+        <cylinder radius="0.01" length="0.05" />
       </geometry>
     </visual>
-    <collision>
+    <collision name="base_collision">
+      <origin rpy="0 ${3.1415/2} 0" />
       <geometry>
-        <box size="${base_x_m} ${base_y_m} ${base_z_m}"/>
+        <cylinder radius="0.01" length="0.05" />
       </geometry>
+      <surface>
+        <friction>
+          <ode>
+            <mu>0.6</mu>
+            <mu2>0.6</mu2>
+          </ode>
+        </friction>
+      </surface>
     </collision>
     <inertial>
       <mass value="${base_mass_kg}"/>
-      <inertia ixx="${base_mass_kg/12*(base_y_m**2 + base_z_m**2)}"
+      <inertia ixx="0.00"
                ixy="0.00"
                ixz="0.00"
-               iyy="${base_mass_kg/12*(base_x_m**2 + base_z_m**2)}"
+               iyy="1"
                iyz="0.00"
-               izz="${base_mass_kg/12*(base_x_m**2 + base_y_m**2)}"/>
+               izz="1"/> <!-- ${base_mass_kg/12*(base_x_m**2 + base_z_m**2)} -->
     </inertial>
+    <!-- <sensor name="base_contact" type="contact">
+      <contact>
+        <collision>base_collision</collision>
+      </contact>
+      <update_rate>60</update_rate>
+    </sensor> -->
   </link>
   
   <xacro:arm length="${arm_length_m}"
@@ -51,16 +67,21 @@
                   mass="${wheel_mass_kg}"
                   motor_mass="${motor_mass_kg}"/>
   
-  <joint name="fixed" type="fixed">
+  <!-- <joint name="fixed" type="fixed">
     <parent link="world"/>
     <child link="base_link"/>
-  </joint>
+    <origin rpy="0 0 0" xyz="0 0 ${2 * base_z_m - 1}"/>
+  </joint> -->
   
   <!-- Add ROS plugin so we can interact with our robot -->
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/</robotNamespace>
     </plugin>
+    <!-- <plugin name="v_naught" filename="libInitialVelocityPlugin.so">
+      <link>base_link</link>
+      <linear>0 4.0 0</linear>
+    </plugin> -->
   </gazebo>
 </robot>
 
