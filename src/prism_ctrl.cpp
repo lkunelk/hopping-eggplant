@@ -44,10 +44,10 @@ void cb(const sensor_msgs::JointState& msg) {
 	// 	if(msg.position[idxOf(msg.name, PRISM_JOINT_NAME)] < DSTL0829[dstl_idx][0])
 	// 		break;
 	// }
-	// int joint_idx = idxOf(msg.name, PRISM_JOINT_NAME);
+	int joint_idx = idxOf(msg.name, PRISM_JOINT_NAME);
 	// float pos = fmin(fmax(msg.position[joint_idx], -ARM_LENGTH), ARM_LENGTH),
 	//       angle = asin(pos / ARM_LENGTH),
-	//       v = msg.twist[joint_idx].linear.z
+	float v = msg.velocity[joint_idx];
 	//       angV = fabs(pos) == ARM_LENGTH ? 0 : v / cos(angle); // check limit hit
 	
 	// float Fsp = -Kspring * msg.position[0];
@@ -55,11 +55,11 @@ void cb(const sensor_msgs::JointState& msg) {
 	float Fm = 0.0f;
 	
 	bool enF = last_collided;
+	float zvel_filt = 0.0f;
 	if(!zvel_buf.full())
 		enF = false;
 	else {
 		// moving average filter, consider better FIR filters
-		float zvel_filt = 0.0f;
 		for(float zvel : zvel_buf) {
 			zvel_filt += zvel / zvel_buf.size();
 		}
@@ -70,14 +70,14 @@ void cb(const sensor_msgs::JointState& msg) {
 		// 	commandMsg.data = 0.0f;
 		// }
 		// else {
-			commandMsg.data = 10.0f; // T_STALL / P_PARAM; // -Fm; // Fm + Fsp;
+			commandMsg.data = T_STALL * (1.0f - fmax(0.0f, fmin(1.0f, v / MAX_ANGV))); // T_STALL / P_PARAM; // -Fm; // Fm + Fsp;
 		// }
 	}
 	else {
-		commandMsg.data = -10.0f; // -T_STALL / P_PARAM; // Fsp;
+		commandMsg.data = -0.5; // -T_STALL / P_PARAM; // Fsp;
 	}
 	
-	printf("%.3f\t%.3f\t%.3f\t%d\t%.3f\n", msg.position[0], msg.position[1], Fm, last_collided, commandMsg.data);
+	printf("%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.3f\n", zvel_filt, msg.position[0], msg.position[1], v, last_collided, commandMsg.data);
 	commandPub.publish(commandMsg);
 	
 	springMsg.data = 0.0f; // -Kspring * msg.position[1];

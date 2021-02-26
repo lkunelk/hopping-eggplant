@@ -20,6 +20,7 @@
     
     <physics name="ode_cfm_0p3" type="ode" default="true">
       <real_time_update_rate>50</real_time_update_rate>
+      <max_step_size>0.00001</max_step_size>
       <!-- <ode>
         <constraints>
           <cfm>0.3</cfm>
