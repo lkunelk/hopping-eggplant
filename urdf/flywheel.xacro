@@ -27,12 +27,12 @@
       <inertial>
         <origin rpy="0 0 0" xyz="0 0 0"/>
         <mass value="0.10206"/>
-        <inertia ixx="0"
+        <inertia ixx="0.000001"
                  ixy="0.00"
                  ixz="0.00"
-                 iyy="10"
+                 iyy="0.000001"
                  iyz="0.00"
-                 izz="10"/>
+                 izz="0.000001"/>
       </inertial>
     </link>
     
