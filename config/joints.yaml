@@ -7,9 +7,8 @@ flywheel_controller:
   joint: arm_to_flywheel
 
 arm_spring:
-  type: "effort_controllers/JointPositionController"
+  type: "effort_controllers/JointEffortController"
   joint: arm_spring
-  pid: { p: 385.0, i: 0.0001, d: 0.0001 }
 
 arm_controller:
   type: "effort_controllers/JointEffortController"

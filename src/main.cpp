@@ -17,7 +17,6 @@ const float I = 0.008f;
 const float D = 0.00f;
 const float G = 9.8f;
 
-const float K_ARM_SPRING = 385.0f; // N/m
 // T0 @300g ~ 0.175s
 
 // 2% settling time
@@ -41,11 +40,9 @@ std_msgs::Float64 commandMsg;
 ros::Publisher posPub;
 ros::Publisher velPub;
 ros::Publisher flywheelVelPub;
-ros::Publisher armSpringPub;
 geometry_msgs::Quaternion posMsg;
 std_msgs::Float64 velMsg;
 std_msgs::Float64 flywheelVelMsg;
-std_msgs::Float64 armSpringMsg;
 
 sensor_msgs::JointState last_joint_states;
 bool last_joint_states_valid = false;
@@ -121,8 +118,8 @@ void linkStateCallback(const gazebo_msgs::LinkStates &msg) {
   if (last_collided && last_joint_states_valid &&
       last_joint_states.effort[idxOf(last_joint_states.name, PRISM_JOINT_NAME)] > 1E-3) {
     // second joint expanding: point in target direction
-    float delta =
-            msg.pose[idxOf(msg.name, TRACK_LINK_NAME)].position.y - msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position.y;
+    float delta = msg.pose[idxOf(msg.name, TRACK_LINK_NAME)].position.y
+                  - msg.pose[idxOf(msg.name, FLY_LINK_NAME)].position.y;
     armAnglOffset += sgn(delta) * fmin(fabs(delta) / P_TAKEOFF, M_PI_4);
     ROS_INFO("SET %.3f, %.3f, %.3f, %.3f", delta, armAnglOffset, last_land_angle, flywheelVel);
   } else {
@@ -140,10 +137,6 @@ void linkStateCallback(const gazebo_msgs::LinkStates &msg) {
 
   commandMsg.data = command;
   flywheelCommandPub.publish(commandMsg);
-
-  // send 0 and let PID controller emulate spring
-  armSpringMsg.data = 0.0f;
-  armSpringPub.publish(armSpringMsg);
 
   // Publish pendulum state for debug
   posMsg.x = msg.pose[idxOf(msg.name, ARM2_LINK_NAME)].position.z;
@@ -163,7 +156,6 @@ int main(int argc, char **argv) {
 
   ros::NodeHandle n;
 
-  armSpringPub = n.advertise<std_msgs::Float64>("arm_spring/command", 1000);
   flywheelCommandPub = n.advertise<std_msgs::Float64>("flywheel_controller/command", 1000);
   velPub = n.advertise<std_msgs::Float64>("pendulum_vel", 1000);
   flywheelVelPub = n.advertise<std_msgs::Float64>("pendulum_flywheel_vel", 1000);

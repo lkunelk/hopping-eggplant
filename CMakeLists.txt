@@ -29,3 +29,6 @@ target_link_libraries(prism_ctrl ${catkin_LIBRARIES} util)
 
 add_executable(base_contact src/base_contact.cpp)
 target_link_libraries(base_contact ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} pthread util)
+
+add_executable(spring_emulator src/spring_emulator.cpp)
+target_link_libraries(spring_emulator ${catkin_LIBRARIES} util)
