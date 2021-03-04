@@ -56,17 +56,17 @@
         </link> -->
 
         <joint name="base_free_theta" type="continuous">
-            <parent link="arm0_link"/>
-            <child link="arm_link"/>
+            <parent link="base_link"/>
+            <child link="arm0_link"/>
             <axis xyz="1 0 0"/>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <limit effort="1000" velocity="1000"/>
         </joint>
 
         <joint name="arm_spring" type="prismatic">
+            <parent link="arm0_link"/>
+            <child link="arm_link"/>
             <axis xyz="0 0 1"/>
-            <parent link="base_link"/>
-            <child link="arm0_link"/>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
             <limit lower="-1" upper="0" effort="1000" velocity="1000"/>
