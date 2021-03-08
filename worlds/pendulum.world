@@ -20,12 +20,16 @@
     
     <physics type="ode" default="true">
       <max_step_size>0.0001</max_step_size>
-      <real_time_update_rate>1000</real_time_update_rate>
+      <real_time_update_rate>50</real_time_update_rate>
       <ode>
         <solver>
-          <type>quick</type>
+          <type>world</type>
           <iters>1000</iters>
         </solver>
+        <constraints>
+          <cfm>0.001</cfm>
+          <contact_max_correcting_vel>0</contact_max_correcting_vel>
+        </constraints>
       </ode>
     </physics>
   </world>

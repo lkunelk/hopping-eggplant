@@ -137,18 +137,24 @@ void linkStateCallback(const gazebo_msgs::LinkStates &msg) {
 
   commandMsg.data = command;
   flywheelCommandPub.publish(commandMsg);
-
-  // Publish pendulum state for debug
-  posMsg.x = msg.pose[idxOf(msg.name, ARM2_LINK_NAME)].position.z;
-  posMsg.y = msg.pose[idxOf(msg.name, BASE_LINK_NAME)].position.z;
-  posMsg.z = msg.twist[idxOf(msg.name, ARM2_LINK_NAME)].linear.z;
-  posMsg.w = last_collided;
-  velMsg.data = armAnglVel;
-  flywheelVelMsg.data = flywheelVel / 1000.0; // so it fits nicely on graph
-
-  posPub.publish(posMsg);
-  velPub.publish(velMsg);
-  flywheelVelPub.publish(flywheelVelMsg);
+  
+  // send 0 and let PID controller emulate spring
+  // armSpringMsg.data = 0.0f;
+  // armSpringPub.publish(armSpringMsg);
+  
+  if(last_joint_states_valid) {
+    // Publish pendulum state for debug
+    posMsg.x = msg.pose[idxOf(msg.name, ARM2_LINK_NAME)].position.z;
+    posMsg.y = msg.pose[idxOf(msg.name, BASE_LINK_NAME)].position.z;
+    posMsg.z = last_joint_states.position[idxOf(last_joint_states.name, SPRING_JOINT_NAME)]; // msg.twist[idxOf(msg.name, ARM2_LINK_NAME)].linear.z;
+    posMsg.w = msg.twist[idxOf(msg.name, FLY_LINK_NAME)].linear.z;
+    velMsg.data = armAnglVel;
+    flywheelVelMsg.data = flywheelVel / 1000.0; // so it fits nicely on graph
+    
+    posPub.publish(posMsg);
+    velPub.publish(velMsg);
+    flywheelVelPub.publish(flywheelVelMsg);
+  }
 }
 
 int main(int argc, char **argv) {

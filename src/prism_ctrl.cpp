@@ -9,9 +9,8 @@
 #include <boost/circular_buffer.hpp>
 #include <algorithm>
 
-const float PISTON_LENGTH = 0.0127f; // m
-const float MAX_ANGV = 10.472f; // rad/s, 0.1s/60deg
-const float T_STALL = 7.2f; // N-m
+const float MAX_ANGV = 9.04f; // rad/s, 0.1s/60deg
+const float T_STALL = 2.8f; // N-m
 
 bool last_collided = false;
 boost::circular_buffer<float> zvel_buf(32);

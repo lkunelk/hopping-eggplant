@@ -2,7 +2,7 @@
 #include "sensor_msgs/JointState.h"
 #include "std_msgs/Float64.h"
 
-float SPRING_K = 385.0f; // 0.1925; // N/m
+float SPRING_K = 433.1f; // 0.1925; // N/m
 
 ros::Publisher springPub;
 std_msgs::Float64 springMsg;
