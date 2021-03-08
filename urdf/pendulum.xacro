@@ -14,97 +14,11 @@
 
     <xacro:property name="motor_mass_kg" value=".080"/>
     <xacro:property name="wheel_mass_kg" value=".037"/>
-    <xacro:property name="solenoid_mass_kg" value="${.10206 * 2}"/>
+    <xacro:property name="solenoid_mass_kg" value="${0.350 - motor_mass_kg - wheel_mass_kg}"/> <!-- hack it to get 350g -->
     <xacro:property name="wheel_radius_m" value=".05"/>
     <xacro:property name="wheel_length_m" value=".02"/>
 
-    <!-- <link name="world" />
-
-    <link name="base1">
-      <inertial>
-        <mass value="0.0001"/>
-        <inertia ixx="0.00000001"
-                 ixy="0.00"
-                 ixz="0.00"
-                 iyy="0.00000001"
-                 iyz="0.00"
-                 izz="0.00000001"/>
-      </inertial>
-    </link> -->
-
-    <gazebo reference="base_link">
-        <mu1>200</mu1>
-        <mu2>200</mu2>
-        <!-- <kp>30000</kp> -->
-    </gazebo>
-
-    <link name="base_link">
-        <visual>
-            <!-- <origin rpy="0 ${3.1415/2} 0" /> -->
-            <geometry>
-                <box size="0.05 0.05 0.01"/>
-            </geometry>
-        </visual>
-        <collision>
-            <!-- <origin rpy="0 ${3.1415/2} 0" /> -->
-            <geometry>
-                <box size="0.05 0.05 0.01"/>
-            </geometry>
-            <!-- <surface>
-              <contact>
-                <ode>
-                  <soft_cfm>0.3</soft_cfm>
-                </ode>
-              </contact>
-              <friction>
-                <ode>
-                  <mu>200</mu>
-                  <mu2>200</mu2>
-                </ode>
-              </friction>
-            </surface> -->
-        </collision>
-        <inertial>
-            <mass value="${base_mass_kg}"/>
-            <inertia ixx="10"
-                     ixy="0.00"
-                     ixz="0.00"
-                     iyy="10"
-                     iyz="0.00"
-                     izz="10"/> <!-- ${base_mass_kg/12*(base_x_m**2 + base_z_m**2)} -->
-        </inertial>
-        <!-- <sensor name="base_contact" type="contact">
-          <contact>
-            <collision>base_collision</collision>
-          </contact>
-          <update_rate>60</update_rate>
-        </sensor> -->
-    </link>
-
-
-    <!-- <joint name="world_base_theta" type="continuous">
-      <parent link="world" />
-      <child link="base0" />
-      <axis xyz="1 0 0" />
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <limit effort="1000" velocity="1000" />
-    </joint> -->
-
-    <!-- <joint name="world_base_z" type="prismatic">
-      <parent link="world" />
-      <child link="base1" />
-      <axis xyz="0 0 1" />
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <limit lower="-1000" upper="1000" effort="1000" velocity="1000" />
-    </joint>
-
-    <joint name="world_base_y" type="prismatic">
-      <parent link="base1" />
-      <child link="base_link" />
-      <axis xyz="0 1 0" />
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <limit lower="-1000" upper="1000" effort="1000" velocity="1000" />
-    </joint> -->
+    <link name="world" />
 
     <xacro:arm length="${arm_length_m}"
                width="${arm_width_m}"

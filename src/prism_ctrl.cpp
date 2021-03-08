@@ -12,7 +12,7 @@
 const float MAX_ANGV = 9.04f; // rad/s, 0.1s/60deg
 const float T_STALL = 2.8f; // N-m
 
-bool last_collided = false;
+bool last_collided = true; // false;
 boost::circular_buffer<float> zvel_buf(32);
 
 ros::Publisher commandPub;

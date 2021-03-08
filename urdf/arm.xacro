@@ -19,7 +19,7 @@
             </collision> -->
             <inertial>
                 <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-                <mass value="${linear_density * length}"/>
+                <mass value="0.0001" /> <!-- ${linear_density * length}"/> -->
                 <inertia ixx="${mass/12*(width**2 + width**2)}"
                          ixy="0.00"
                          ixz="0.00"
@@ -29,7 +29,7 @@
             </inertial>
         </link>
 
-        <link name="arm0_link">
+        <!-- <link name="arm0_link">
             <inertial>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
                 <mass value="0.001"/>
@@ -42,7 +42,7 @@
             </inertial>
         </link>
 
-        <!-- <link name="arm1_link">
+        <link name="arm1_link">
           <inertial>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <mass value="0.001"/>
@@ -53,7 +53,7 @@
                      iyz="0.00"
                      izz="10"/>
           </inertial>
-        </link> -->
+        </link>
 
         <joint name="base_free_theta" type="continuous">
             <parent link="base_link"/>
@@ -61,10 +61,10 @@
             <axis xyz="1 0 0"/>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <limit effort="1000" velocity="1000"/>
-        </joint>
+        </joint> -->
 
         <joint name="arm_spring" type="prismatic">
-            <parent link="arm0_link"/>
+            <parent link="world"/>
             <child link="arm_link"/>
             <axis xyz="0 0 1"/>
             <origin rpy="0 0 0" xyz="0 0 0"/>

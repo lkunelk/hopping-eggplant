@@ -37,8 +37,8 @@ void tick(ConstContactsPtr &msg) {
 }
 
 void contactCallback(ConstContactsPtr &msg) {
-  tick(msg);
-  contact_msg.data = collided_();
+  // tick(msg);
+  contact_msg.data = true; // collided_();
   pub.publish(contact_msg);
 }
 
