@@ -18,14 +18,15 @@
       </camera>
     </gui>
     
-    <physics name="ode_cfm_0p3" type="ode" default="true">
-      <real_time_update_rate>50</real_time_update_rate>
-      <max_step_size>0.00001</max_step_size>
-      <!-- <ode>
-        <constraints>
-          <cfm>0.3</cfm>
-        </constraints>
-      </ode> -->
+    <physics type="ode" default="true">
+      <max_step_size>0.0001</max_step_size>
+      <real_time_update_rate>1000</real_time_update_rate>
+      <ode>
+        <solver>
+          <type>quick</type>
+          <iters>1000</iters>
+        </solver>
+      </ode>
     </physics>
   </world>
 </sdf>
