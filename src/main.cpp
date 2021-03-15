@@ -148,7 +148,7 @@ void linkStateCallback(const gazebo_msgs::LinkStates &msg) {
           flypos = (msg.pose[idxOf(msg.name, "robot::arm4_link")].position.z - msg.pose[idxOf(msg.name, "robot::arm_link")].position.z) - 0.0254 - 0.1;
     posMsg.x = last_joint_states.position[idxOf(last_joint_states.name, SPRING_JOINT_NAME)];
     posMsg.y = flypos; // msg.twist[idxOf(msg.name, ARM2_LINK_NAME)].linear.z;
-    posMsg.z = last_joint_states.effort[idxOf(last_joint_states.name, PRISM_JOINT_NAME)];
+    posMsg.z = last_joint_states.position[idxOf(last_joint_states.name, PRISM_JOINT_NAME)];
     posMsg.w = 0.35 * flyvel * flyvel / 2 + 0.35 * 9.8 * flypos; // flywheel K energy
     velMsg.data = armAnglVel;
     flywheelVelMsg.data = flywheelVel / 1000.0; // so it fits nicely on graph

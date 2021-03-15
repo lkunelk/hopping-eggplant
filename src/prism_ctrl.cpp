@@ -43,7 +43,7 @@ void cb(const sensor_msgs::JointState &msg) {
   if (enF) {
     commandMsg.data = T_STALL * (1.0f - fmax(0.0f, fmin(1.0f, v / MAX_ANGV)));
   } else {
-    commandMsg.data = 0.0;
+    commandMsg.data = -0.5;
   }
 
   printf("%.3f\t%.3f\t%.3f\t%.3f\t%d\t%.3f\n", zvel_filt, msg.position[0], msg.position[1], v, last_collided, commandMsg.data);
