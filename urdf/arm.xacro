@@ -11,15 +11,9 @@
                     <box size="${width} ${width} ${length}"/>
                 </geometry>
             </visual>
-            <!-- <collision>
-              <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-              <geometry>
-                <box size="${width} ${width} ${length}"/>
-              </geometry>
-            </collision> -->
             <inertial>
                 <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-                <mass value="0.0001" /> <!-- ${linear_density * length}"/> -->
+                <mass value="0.001" /> <!-- ${linear_density * length}"/> -->
                 <inertia ixx="${mass/12*(width**2 + width**2)}"
                          ixy="0.00"
                          ixz="0.00"

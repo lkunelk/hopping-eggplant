@@ -8,11 +8,6 @@
                     <cylinder length="${length}" radius="${radius}"/>
                 </geometry>
             </visual>
-            <!-- <collision>
-              <geometry>
-                <cylinder length="${length}" radius="${radius}"/>
-              </geometry>
-            </collision> -->
             <inertial>
                 <mass value="${mass + motor_mass + solenoid_mass}"/>
                 <inertia ixx="${1/12*mass*(3*radius**2 + length**2)}"
@@ -61,7 +56,7 @@
             <inertial>
                 <origin rpy="0 0 0" xyz="0 -0.01 0.0"/>
                 <mass value="0.001"/>
-                <inertia ixx="0.000001"
+                <inertia ixx="0.001"
                          ixy="0.00"
                          ixz="0.00"
                          iyy="0.000001"
@@ -74,7 +69,7 @@
             <inertial>
                 <origin rpy="0 0 0" xyz="0 0 0"/>
                 <mass value="0.001"/>
-                <inertia ixx="0.000001"
+                <inertia ixx="0.001"
                          ixy="0.00"
                          ixz="0.00"
                          iyy="0.000001"
