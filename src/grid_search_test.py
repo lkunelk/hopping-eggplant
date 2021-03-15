@@ -41,10 +41,19 @@ def experiment(spring_k, motor_vmax, motor_tmax, initial_z=-0.05918):
     motor_tmax [Nm]
     initial_energy [J] """
 
-    # wait for piston arm to return to 0 position
-    rospy.loginfo("Wait for Piston Arm to return to 0...")
-    while arm_piston_pos > TOLERANCE:
-        pass
+    # simulation reset
+    rospy.loginfo("Reset sim")
+    reset_sim = 'rosservice call /gazebo/reset_simulation'
+    os.system(reset_sim)
+
+    # reset controllers (simulation has to be running for some reason)
+    rospy.loginfo("Reset joint_states controller")
+    stop_ctrl = 'rosrun controller_manager controller_manager stop joint_state_controller'
+    unload_ctrl = 'rosrun controller_manager controller_manager unload joint_state_controller'
+    spawn_ctrl = 'rosrun controller_manager controller_manager spawn joint_state_controller'
+    os.system(stop_ctrl)
+    os.system(unload_ctrl)
+    os.system(spawn_ctrl)
 
     # pause sim
     rospy.loginfo("Pause sim")
