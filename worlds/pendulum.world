@@ -19,7 +19,7 @@
     </gui>
     
     <physics type="ode" default="true">
-      <max_step_size>0.00002</max_step_size>
+      <max_step_size>0.000002</max_step_size>
       <real_time_update_rate>50</real_time_update_rate>
       <ode>
         <solver>

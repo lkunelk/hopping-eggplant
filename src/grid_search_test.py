@@ -2,7 +2,15 @@
 import os
 import rospy
 from geometry_msgs.msg import Quaternion
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Float64MultiArray
+import time
+
+# interrupt handling
+from threading import Event
+import sys
+
+exit = Event()
+exit_signal = 0
 
 TOLERANCE = 0.0001  # value we consider close enough to zero
 arm_piston_pos = 1
@@ -11,6 +19,7 @@ total_energy = 0
 pub_spring_k = None
 pub_piston_t = None
 pub_piston_v = None
+pub_piston_specs = None
 
 
 def callback(data):
@@ -20,24 +29,38 @@ def callback(data):
     arm_piston_pos = data.z
     total_energy = data.w
 
+def quit(signo, _frame):
+    global exit_signal
+    exit_signal = signo
+    print("Interrupted by %d, shutting down" % signo)
+    exit.set()
 
 def main():
-    global pub_spring_k
+    # set interrupt handlers
+    import signal
+    for sig in ('TERM', 'HUP', 'INT'):
+        signal.signal(getattr(signal, 'SIG'+sig), quit);
+        
+    global pub_spring_k, pub_piston_specs
     rospy.init_node('grid_test', anonymous=True)
     rospy.Subscriber("pendulum_pos", Quaternion, callback)
     pub_spring_k = rospy.Publisher('update_spring_k', Float64, queue_size=10)
+    pub_piston_specs = rospy.Publisher('piston_specs', Float64MultiArray, queue_size=10)
 
     # read csv data
 
     # loop through different parameters
-    experiment(800, 1, 1)
-
+    experiment(800, 100, 100)
+    
+    if exit.is_set():
+        sys.exit(exit_signal)
+        
     rospy.spin()
 
 
 def experiment(spring_k, motor_vmax, motor_tmax, initial_z=-0.05918):
     """ spring_k [N/m]
-    motor_vmax [m/s^2]
+    motor_vmax [m/s]
     motor_tmax [Nm]
     initial_energy [J] """
 
@@ -71,16 +94,18 @@ def experiment(spring_k, motor_vmax, motor_tmax, initial_z=-0.05918):
 
     # update params
     rospy.loginfo("Update Spring K={}".format(spring_k))
+    
     pub_spring_k.publish(spring_k)
+    pub_piston_specs.publish(data=[motor_vmax, motor_tmax])
 
     # unpause
     pause_sim = 'rosservice call /gazebo/unpause_physics'
     os.system(pause_sim)
 
     # wait for experiment to be done
-    while abs(spring_pos) > TOLERANCE:
-        pass
-
+    while spring_pos < 0 and not exit.is_set():
+        exit.wait(0.1)
+    
     rospy.loginfo("Max energy:{}".format(total_energy))
 
     return total_energy

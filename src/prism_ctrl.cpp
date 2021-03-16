@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include "sensor_msgs/JointState.h"
 #include "gazebo_msgs/LinkStates.h"
+#include "std_msgs/Float64MultiArray.h"
 #include "std_msgs/Float64.h"
 #include "std_msgs/Bool.h"
 #include "util.hpp"
@@ -9,8 +10,8 @@
 #include <boost/circular_buffer.hpp>
 #include <algorithm>
 
-const float MAX_ANGV = 9.04f; // rad/s, 0.1s/60deg
-const float T_STALL = 2.8f; // N-m
+float MAX_ANGV = 0.0f; // 9.04f; // rad/s, 0.1s/60deg
+float T_STALL = 0.0f; // N-m
 
 bool last_collided = true; // false;
 boost::circular_buffer<float> zvel_buf(32);
@@ -20,6 +21,11 @@ std_msgs::Float64 commandMsg;
 
 void link_cb(const gazebo_msgs::LinkStates &msg) {
   zvel_buf.push_back(msg.twist[idxOf(msg.name, FLY_LINK_NAME)].linear.z);
+}
+
+void piston_specs_cb(const std_msgs::Float64MultiArray &msg) {
+	MAX_ANGV = msg.data[0];
+	T_STALL = msg.data[1];
 }
 
 void cb(const sensor_msgs::JointState &msg) {
@@ -61,6 +67,7 @@ int main(int argc, char **argv) {
   commandPub = n.advertise<std_msgs::Float64>("arm_controller/command", 1000);
 
   ros::Subscriber sub = n.subscribe("/joint_states", 1000, cb);
+  ros::Subscriber sub_update_piston_specs = n.subscribe("/piston_specs", 1000, piston_specs_cb);
   ros::Subscriber sub_base_contact = n.subscribe("base_contact", 1000, base_contact_cb);
   ros::Subscriber sub_links = n.subscribe("/gazebo/link_states", 1000, link_cb);
 
