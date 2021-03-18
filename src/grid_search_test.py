@@ -47,22 +47,56 @@ def main():
     pub_spring_k = rospy.Publisher('update_spring_k', Float64, queue_size=10)
     pub_piston_specs = rospy.Publisher('piston_specs', Float64MultiArray, queue_size=10)
 
-    # read csv data
+    t_v_maxs = [(4.27368421052632E+00, 5.92165281926648E+00), (1.65714285714286E+00, 1.52716309549504E+01), (1.02784810126582E+00, 2.46216090906343E+01)]
+    z_ks = {
+        'E=0.289J' : [(8.15069062856409E-02, 1.44375E+02), (3.93235630189914E-02, 4.33125E+02), (2.87658744048376E-02, 7.21875E+02)],
+        'E=0.566J' : [(1.14644484066114E-01, 1.44375E+02), (5.91836971769453E-02, 4.33125E+02), (4.42708576996474E-02, 7.21875E+02)],
+        'E=1.000J' : [(1.43829372024188E-01, 1.44375E+02), (7.63320431845617E-02, 4.33125E+02), (5.76016775618413E-02, 7.21875E+02)]
+    }
+
+    file_path = 'data.csv'
+    with open(file_path, 'w') as file:
+        file.write('time(s), energy, z, k, t, v, final_energy(J)\n')
+
+    start_time = time.time()
 
     # loop through different parameters
-    experiment(800, 100, 100)
-    
+    for key in z_ks:
+        for power_i in range(3):
+            for spring_i in range(3):
+
+                z, k = z_ks[key][spring_i]
+                t, v = t_v_maxs[power_i]
+
+                result = experiment(
+                    initial_z=z,
+                    spring_k=k,
+                    motor_tmax=t,
+                    motor_vmax=v
+                )
+
+                curr_time = time.time() - start_time
+
+                with open(file_path, 'a') as file:
+                    line = '{},{},{},{},{},{},{}\n'.format(curr_time, key, z, k, t, v, result)
+                    file.write(line)
+
+
     if exit.is_set():
         sys.exit(exit_signal)
         
     rospy.spin()
 
 
-def experiment(spring_k, motor_vmax, motor_tmax, initial_z=-0.05918):
+def experiment(initial_z, spring_k, motor_tmax, motor_vmax):
     """ spring_k [N/m]
     motor_vmax [m/s]
     motor_tmax [Nm]
     initial_energy [J] """
+
+    # unpause
+    pause_sim = 'rosservice call /gazebo/unpause_physics'
+    os.system(pause_sim)
 
     # simulation reset
     rospy.loginfo("Reset sim")
@@ -89,11 +123,11 @@ def experiment(spring_k, motor_vmax, motor_tmax, initial_z=-0.05918):
     args = "\"{'model_name':'robot', " \
            "'urdf_param_name':'robot_description'," \
            "'joint_names':['arm_spring', 'arm_piston_driver']," \
-           "'joint_positions':[" + str(initial_z) + ", 0.0]}\""
+           "'joint_positions':[" + str(-initial_z) + ", 0.0]}\""
     os.system(cmd + args)
 
     # update params
-    rospy.loginfo("Update Spring K={}".format(spring_k))
+    rospy.loginfo("Update Spring_K={} motor_vmax={} motor_tmax={}".format(spring_k, motor_vmax, motor_tmax))
     
     pub_spring_k.publish(spring_k)
     pub_piston_specs.publish(data=[motor_vmax, motor_tmax])
