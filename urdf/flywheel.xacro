@@ -8,11 +8,6 @@
                     <cylinder length="${length}" radius="${radius}"/>
                 </geometry>
             </visual>
-            <!-- <collision>
-              <geometry>
-                <cylinder length="${length}" radius="${radius}"/>
-              </geometry>
-            </collision> -->
             <inertial>
                 <mass value="${mass + motor_mass + solenoid_mass}"/>
                 <inertia ixx="${1/12*mass*(3*radius**2 + length**2)}"
@@ -82,27 +77,6 @@
                          izz="0.000001"/>
             </inertial>
         </link>
-
-        <!-- <link name="arm5_link">
-          <inertial>
-            <origin rpy="0 0 0" xyz="0 0 0"/>
-            <mass value="0.001"/>
-            <inertia ixx="0.000001"
-                     ixy="0.00"
-                     ixz="0.00"
-                     iyy="0.000001"
-                     iyz="0.00"
-                     izz="0.000001"/>
-          </inertial>
-        </link> -->
-
-        <!-- <joint name="arm_prism" type="prismatic">
-          <axis xyz="0 0 1" />
-          <parent link="arm_link" />
-          <child link="arm2_link" />
-          <origin rpy="0 0 0" xyz="0 0 0"/>
-          <limit lower="0.006" upper="0.013" effort="1000" velocity="1000" />
-        </joint> -->
 
         <joint name="arm_piston_base" type="continuous">
             <axis xyz="1 0 0"/>
