@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
+    <xacro:include filename="$(find pendulum)/urdf/imu.xacro"/>
     <xacro:property name="piston_offset" value="0.04"/> <!-- m -->
     <xacro:macro name="flywheel" params="radius length mass motor_mass arm_length solenoid_mass"> <!-- offset -->
         <link name="flywheel_link">
@@ -77,6 +78,10 @@
                          izz="0.000001"/>
             </inertial>
         </link>
+
+
+        <xacro:imu origin="arm4_link"/>
+
 
         <joint name="arm_piston_base" type="continuous">
             <axis xyz="1 0 0"/>

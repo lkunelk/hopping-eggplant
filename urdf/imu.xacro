@@ -1,0 +1,34 @@
+<robot name="pendulum" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <xacro:macro name="imu" params="origin">
+
+        <link name="imu_link" />
+
+        <joint name="${origin}_imu" type="fixed">
+            <parent link="${origin}"/>
+            <child link="imu_link"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <axis xyz="0 0 0"/>
+        </joint>
+
+        <gazebo reference="imu_link">
+            <gravity>true</gravity>
+            <sensor name="imu_sensor" type="imu">
+                <always_on>true</always_on>
+                <update_rate>100</update_rate>
+                <visualize>true</visualize>
+                <topic>__default_topic__</topic>
+                <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+                    <topicName>imu_raw</topicName>
+                    <bodyName>imu_link</bodyName>
+                    <updateRateHZ>50.0</updateRateHZ>
+                    <gaussianNoise>0.0</gaussianNoise>
+                    <xyzOffset>0 0 0</xyzOffset>
+                    <rpyOffset>0 0 0</rpyOffset>
+                    <frameName>imu_link</frameName>
+                </plugin>
+                <pose>0 0 0 0 0 0</pose>
+            </sensor>
+        </gazebo>
+
+    </xacro:macro>
+</robot>
