@@ -5,6 +5,12 @@ Prototype Flywheel Pendulum
 1. create directory catkin_ws/src/
 2. clone repo into it
 
+## Install Dependancies in package.xml
+1. go to catkin_ws/ and run below command
+```
+rosdep install --from-paths src --ignore-src -r -y
+```
+
 ## Running Simulation
 1. build (need to do it first time after clone, and any time you modify c++ files)
 ```
