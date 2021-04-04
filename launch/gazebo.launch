@@ -27,11 +27,11 @@
         type="spawn_model"
         respawn="false"
         output="screen"
-        args="-z 0
+        args="-z 0.2
               -urdf
               -model robot
               -param robot_description
-              -J robot::arm_spring '-0.05918'" />
+              -J robot::arm_spring '-0.0'" />
               <!-- -J robot::base_free_theta 0.8"/> --><!--
               -R 1.8 -->
 
