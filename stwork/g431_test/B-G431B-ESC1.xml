@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE targetDefinitions [ 
+	<!ELEMENT targetDefinitions (board)>
+	<!ELEMENT board (name, dbgIF+, dbgDEV, mcuId)>
+	<!ELEMENT name (#PCDATA)>
+	<!ELEMENT dbgIF (#PCDATA)>
+	<!ELEMENT dbgDEV (#PCDATA)>
+	<!ELEMENT mcuId (#PCDATA)>
+	<!ATTLIST board id CDATA #REQUIRED>
+]>
+
+<targetDefinitions>
+  <board id="b-g431b-esc1">
+    <name>B-G431B-ESC1</name>
+    <dbgIF>SWD</dbgIF>
+    <dbgIF>JTAG</dbgIF>
+    <dbgDEV>ST-Link</dbgDEV>
+    <mcuId>stm32g431cbux</mcuId>
+  </board>
+</targetDefinitions>
