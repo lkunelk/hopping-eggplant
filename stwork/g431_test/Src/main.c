@@ -101,9 +101,14 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim4);
+  htim4.Instance->CCER |= TIM_CCER_CC1E | TIM_CCER_CC2E;
+  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 5);
+  htim1.Instance->CR2 |= TIM_CR2_CCUS | TIM_CR2_CCPC;
+  htim1.Instance->DIER |= TIM_DIER_COMIE;
+  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, 30);
   HAL_TIM_Base_Start(&htim1);
   HAL_ADC_Start(&hadc1);
-  HAL_TIM_Base_Start_IT(&htim6);
+//  HAL_TIM_Base_Start_IT(&htim6);
   HAL_TIM_Base_Start(&htim7);
   htim1.Instance->BDTR |= TIM_BDTR_MOE;
 
@@ -125,7 +130,7 @@ int main(void)
 ////	  HAL_Delay(200);
 //  }
 
-  while (1)
+  for (volatile uint32_t ticks = 0;; ticks++)
   {
     /* USER CODE END WHILE */
 

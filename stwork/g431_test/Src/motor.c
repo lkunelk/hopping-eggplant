@@ -68,8 +68,8 @@ const uint8_t mod6[12] = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 };
 
 volatile uint16_t pwmin = 0;
 extern volatile uint8_t abz;
-volatile uint8_t abzs[128] = { 0 };
-volatile uint8_t abzs_idx = 0;
+volatile uint8_t abzs[512] = { 0 };
+volatile uint16_t abzs_idx = 0;
 volatile uint8_t last_abz = 0;
 #define POT_HOME 946
 volatile int16_t e = 0;
@@ -84,6 +84,9 @@ volatile uint8_t diff_buf_idx = 0;
 #define CTRL_I_D 512
 #define CTRL_D_N 1
 #define CTRL_D_D 64
+
+volatile uint8_t acceled = 0;
+volatile uint8_t downsampler = 0;
 void motor_tick(void) {
 	ticks++;
 	abz = enc();
@@ -94,11 +97,11 @@ void motor_tick(void) {
 	diff_i += delta;
 	volatile int16_t ctrl = 80; // delta * CTRL_P_N / CTRL_P_D + diff_i * CTRL_I_N / CTRL_I_D;
 
-	volatile uint8_t state = mod6[hall2state[abz] + (ctrl > 0 ? 2 : 5)]; // ctrl = 0 -> stall
+	volatile uint8_t state = mod6[hall2state[abz] + (ctrl > 0 ? 0 : 3) + 2]; // ctrl = 0 -> stall
 //	volatile uint16_t ctrl_ = abs((ctrl * CTRL2CCR_N) / CTRL2CCR_D);
 //	ctrl_ = min(MAX_CCR, ctrl_); // ((ticks) & 0xFF) * MAX_CCR / 0xFF; // 80; // (pwmin - MIN_PWMIN_PULSE) * PWMIN2TARG_N / PWMIN2TARG_D; //
 
-	uint16_t nccr = min(MAX_CCR, max(10, abs(ctrl)));
+	uint16_t nccr = !acceled * min(MAX_CCR, max(10, abs(ctrl)));
 	uint16_t ccer = (state_en[state] & ~TIM1_POL_MSK) | TIM1_POL;
 
 	// <timer critical region>
@@ -111,8 +114,16 @@ void motor_tick(void) {
 	TIM1->CCER = ccer;
 	// </timer critical region>
 
-	if(last_abz != abz)
-		abzs[(abzs_idx++) & 127] = abz;
+	if(!acceled && ticks > 24000) {
+		acceled = 1;
+		ticks = 0;
+	}
+	if(acceled && last_abz != abz && abzs_idx < 512) { //  &&
+		if(((downsampler & 7) == 0))
+			abzs[abzs_idx++] = ticks;
+		ticks = 0;
+	}
+	downsampler++;
 
 	last_abz = abz;
 
