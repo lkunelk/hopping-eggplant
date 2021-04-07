@@ -62,15 +62,15 @@ volatile uint32_t* const state_ccr[6][3] = {
 	{ &(TIM1->CCR1), &(TIM1->CCR2), &(TIM1->CCR3) },
 	{ &(TIM1->CCR1), &(TIM1->CCR3), &(TIM1->CCR2) },
 };
-const uint8_t mod6[12] = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 };
+const uint8_t mod6[18] = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 };
 //volatile int32_t ctrl_i = 0, ctrl_p = 0, ctrl_d_buf[NUM_CTRL_D_BUF] = { 0 };
 //volatile uint8_t ctrl_d_idx = 0;
 
 volatile uint16_t pwmin = 0;
 extern volatile uint8_t abz;
-volatile uint8_t abzs[512] = { 0 };
+volatile uint16_t abzs[1024] = { 0 };
 volatile uint16_t abzs_idx = 0;
-volatile uint8_t last_abz = 0;
+volatile uint8_t last_abz = -1;
 #define POT_HOME 946
 volatile int16_t e = 0;
 volatile uint32_t ticks = 0;
@@ -95,33 +95,26 @@ void motor_tick(void) {
 	int16_t delta = pwmin - POT_HOME;
 	diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta;
 	diff_i += delta;
-	volatile int16_t ctrl = 80; // delta * CTRL_P_N / CTRL_P_D + diff_i * CTRL_I_N / CTRL_I_D;
+	volatile int16_t ctrl = 110; // delta * CTRL_P_N / CTRL_P_D + diff_i * CTRL_I_N / CTRL_I_D;
 
-	volatile uint8_t state = mod6[hall2state[abz] + (ctrl > 0 ? 0 : 3) + 2]; // ctrl = 0 -> stall
+	volatile uint8_t state = mod6[hall2state[abz] + (ctrl > 0 ? 0 : 3) + 4 + (last_abz == -1)]; // + (abz != last_abz && last_abz != -1) // ctrl = 0 -> stall
 //	volatile uint16_t ctrl_ = abs((ctrl * CTRL2CCR_N) / CTRL2CCR_D);
 //	ctrl_ = min(MAX_CCR, ctrl_); // ((ticks) & 0xFF) * MAX_CCR / 0xFF; // 80; // (pwmin - MIN_PWMIN_PULSE) * PWMIN2TARG_N / PWMIN2TARG_D; //
 
-	uint16_t nccr = !acceled * min(MAX_CCR, max(10, abs(ctrl)));
+	uint16_t nccr = min(MAX_CCR, max(10, abs(ctrl))); // !acceled *
 	uint16_t ccer = (state_en[state] & ~TIM1_POL_MSK) | TIM1_POL;
 
 	// <timer critical region>
-	*(state_ccr[state][2]) = 0;
-	*(state_ccr[state][0]) = 0; // nccr ; // PCCR; // high-side
-	*(state_ccr[state][1]) = 0; // + (TIM1->BDTR & TIM_BDTR_DTG_Msk) + 1; // low-side
-
-	*(state_ccr[state][0]) = nccr; // nccr ; // PCCR; // high-side
-	*(state_ccr[state][1]) = nccr; // + (TIM1->BDTR & TIM_BDTR_DTG_Msk) + 1; // low-side
+	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = nccr;
 	TIM1->CCER = ccer;
 	// </timer critical region>
 
-	if(!acceled && ticks > 24000) {
-		acceled = 1;
-		ticks = 0;
-	}
-	if(acceled && last_abz != abz && abzs_idx < 512) { //  &&
-		if(((downsampler & 7) == 0))
-			abzs[abzs_idx++] = ticks;
-		ticks = 0;
+//	if(!acceled && ticks > 24000) {
+//		acceled = 1;
+//		ticks = 0;
+//	}
+	if(abzs_idx < 1024 && ((downsampler & 3) == 0)) { // && // acceled &&
+		abzs[abzs_idx++] = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
 	}
 	downsampler++;
 

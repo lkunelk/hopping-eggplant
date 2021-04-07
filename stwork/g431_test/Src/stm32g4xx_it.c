@@ -63,6 +63,7 @@ volatile int8_t tick_blackout = 0;
 
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim1;
+extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim7;
 /* USER CODE BEGIN EV */
@@ -208,6 +209,7 @@ void SysTick_Handler(void)
 /**
   * @brief This function handles TIM1 trigger and commutation interrupts and TIM17 global interrupt.
   */
+volatile uint16_t v;
 void TIM1_TRG_COM_TIM17_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_TRG_COM_TIM17_IRQn 0 */
@@ -215,8 +217,22 @@ void TIM1_TRG_COM_TIM17_IRQHandler(void)
   /* USER CODE END TIM1_TRG_COM_TIM17_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_TRG_COM_TIM17_IRQn 1 */
-
+  htim1.Instance->CCR1 ^= 1;
   /* USER CODE END TIM1_TRG_COM_TIM17_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM4 global interrupt.
+  */
+void TIM4_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM4_IRQn 0 */
+
+  /* USER CODE END TIM4_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim4);
+  /* USER CODE BEGIN TIM4_IRQn 1 */
+
+  /* USER CODE END TIM4_IRQn 1 */
 }
 
 /**
@@ -262,14 +278,17 @@ void TIM7_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-void HAL_TIM_TriggerCallback(TIM_HandleTypeDef *htim) {
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 	if(htim->Instance == TIM4) {
-
+		motor_tick();
 	}
 }
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 	if(htim->Instance == TIM1) {
-		motor_tick();
+		if(__HAL_TIM_GET_FLAG(&htim1, TIM_FLAG_COM)) {
+			while(1) {}
+		}
+//		motor_tick();
 	}
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
