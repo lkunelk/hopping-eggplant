@@ -101,7 +101,7 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 //  htim1.Instance->DIER |= TIM_DIER_COMIE;
-  htim1.Instance->CR2 |= TIM_CR2_CCUS | TIM_CR2_CCPC;
+//   htim1.Instance->CR2 |= TIM_CR2_CCUS | TIM_CR2_CCPC;
   HAL_TIM_Base_Start(&htim1);
 
   htim4.Instance->DIER |= TIM_DIER_CC2IE;
@@ -113,14 +113,14 @@ int main(void)
 //  htim4.Instance->CCMR1 |= 0b0001 << TIM_CCMR1_OC2M_Pos;
   HAL_TIM_Base_Start(&htim4);
 //  htim1.Instance->DIER |= TIM_DIER_COMIE;
-//  HAL_TIM_Base_Start_IT(&htim6);
+  HAL_TIM_Base_Start_IT(&htim6);
   HAL_TIM_Base_Start(&htim7);
   htim1.Instance->BDTR |= TIM_BDTR_MOE;
 
   HAL_ADC_Start(&hadc1);
 
 //  HAL_TIM_GenerateEvent(&htim4, TIM_EVENTSOURCE_TRIGGER);
-  motor_tick();
+  motor_tick(1);
   HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
 
 //  __HAL_TIM_SET_COUNTER(&htim4, HALL_INIT);

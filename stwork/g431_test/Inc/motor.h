@@ -10,7 +10,7 @@
 
 #include "main.h"
 
-void motor_tick(void);
+void motor_tick(uint8_t standstill);
 
 #define TIM1_POL 0b0
 #define TIM1_POL_MSK 0b101010101010
@@ -33,7 +33,7 @@ void motor_tick(void);
 #define ENC2TARG_D 11
 #define CTRL2CCR_N 6
 #define CTRL2CCR_D 1
-#define MAX_CCR 150
+#define MAX_CCR 110
 #define MAX_TICK 70
 #define HALL_TICK_BLACKOUT 3 // number of TIM6 cycles to blackout on timer-based ticks
 #define PCCR 220
@@ -49,5 +49,8 @@ void motor_tick(void);
 //#define MAX_CTRL_I (CTRL_I_D * MAX_CCR / CTRL_I_N * CTRL2CCR_D / CTRL2CCR_N * MAX_CTRL_I_N / MAX_CTRL_I_D)
 //#define CTRL_P_N 1
 //#define CTRL_P_D 1
+
+#define Kv 26098.1f // at 8.1V, %PWM-256 * (us / tick) (includes drag/damping friction)
+#define Ki 93028.77894443E-12 // at 8.1V, tick/us^2/%PWM
 
 #endif /* MOTOR_H_ */

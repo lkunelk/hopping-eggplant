@@ -209,7 +209,6 @@ void SysTick_Handler(void)
 /**
   * @brief This function handles TIM1 trigger and commutation interrupts and TIM17 global interrupt.
   */
-volatile uint16_t v;
 void TIM1_TRG_COM_TIM17_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_TRG_COM_TIM17_IRQn 0 */
@@ -280,36 +279,17 @@ void TIM7_IRQHandler(void)
 /* USER CODE BEGIN 1 */
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 	if(htim->Instance == TIM4) {
-		motor_tick();
-	}
-}
-void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM1) {
-		if(__HAL_TIM_GET_FLAG(&htim1, TIM_FLAG_COM)) {
-			while(1) {}
-		}
-//		motor_tick();
+		motor_tick(0);
 	}
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM6) {
-		if(__HAL_TIM_GET_FLAG(htim, TIM_SR_SBIF)) { // TODO implement exponential backoff
-			__HAL_TIM_CLEAR_FLAG(htim, TIM_SR_SBIF);
-			if(__HAL_TIM_GET_FLAG(htim, TIM_SR_SBIF)) {
-				// TODO attempt failed: increment fail time counter
-			}
-		}
-
-//		ctrl_i = min(MAX_CTRL_I, max(-MAX_CTRL_I, ctrl_i + ctrl_p));
-//		ctrl_d_buf[(ctrl_d_idx++) & (NUM_CTRL_D_BUF - 1)] = ctrl_p;
-
-		if(tick_blackout <= 0)
-			motor_tick();
-		else
-			tick_blackout--;
-
-//		HAL_UART_Transmit_IT(&huart2, &e, 2);
+	if(htim->Instance == TIM6 && __HAL_TIM_GET_COUNTER(&htim4) == 0 && __HAL_TIM_GET_FLAG(&htim4, TIM_FLAG_TRIGGER) == RESET) {
+		motor_tick(1);
+		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
 	}
+}
+void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
+
 }
 volatile uint16_t tim_posedge = 0;
 volatile uint8_t last_r = 0;
