@@ -10,6 +10,10 @@
 
 #include "main.h"
 
+inline uint8_t _motor_stopped(void) {
+	return __HAL_TIM_GET_COUNTER(&htim4) == 0 && __HAL_TIM_GET_FLAG(&htim4, TIM_FLAG_TRIGGER) == RESET;
+}
+void ctrl_tick(void);
 void motor_tick(uint8_t standstill);
 
 #define TIM1_POL 0b0
@@ -33,7 +37,7 @@ void motor_tick(uint8_t standstill);
 #define ENC2TARG_D 11
 #define CTRL2CCR_N 6
 #define CTRL2CCR_D 1
-#define MAX_CCR 110
+#define MAX_CCR 700
 #define MAX_TICK 70
 #define HALL_TICK_BLACKOUT 3 // number of TIM6 cycles to blackout on timer-based ticks
 #define PCCR 220

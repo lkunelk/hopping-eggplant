@@ -27,6 +27,7 @@
 #include "motor.h"
 #include <math.h>
 #include "math_util.h"
+#include "adc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -216,7 +217,7 @@ void TIM1_TRG_COM_TIM17_IRQHandler(void)
   /* USER CODE END TIM1_TRG_COM_TIM17_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_TRG_COM_TIM17_IRQn 1 */
-  htim1.Instance->CCR1 ^= 1;
+
   /* USER CODE END TIM1_TRG_COM_TIM17_IRQn 1 */
 }
 
@@ -283,9 +284,8 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM6 && __HAL_TIM_GET_COUNTER(&htim4) == 0 && __HAL_TIM_GET_FLAG(&htim4, TIM_FLAG_TRIGGER) == RESET) {
-		motor_tick(1);
-		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
+	if(htim->Instance == TIM6 && __HAL_ADC_GET_FLAG(&hadc1, ADC_FLAG_EOC)) {
+		ctrl_tick();
 	}
 }
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {

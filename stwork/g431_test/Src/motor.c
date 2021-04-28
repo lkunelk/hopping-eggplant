@@ -11,6 +11,7 @@
 #include "math_util.h"
 #include "adc.h"
 #include <math.h>
+#include <stdlib.h>
 
 /*
 Considered the inductor energy dumping to decide about deadtime + complimentary
@@ -68,12 +69,13 @@ const uint8_t mod6[18] = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 
 //volatile int32_t ctrl_i = 0, ctrl_p = 0, ctrl_d_buf[NUM_CTRL_D_BUF] = { 0 };
 //volatile uint8_t ctrl_d_idx = 0;
 
+#define PWMIN_HOME 123
 volatile uint16_t pwmin = 0;
 extern volatile uint8_t abz;
 volatile int16_t abzs[256] = { 0 };
 volatile uint16_t abzs_idx = 0;
 volatile uint8_t last_abz = 0xFF;
-#define POT_HOME 0x84C
+#define POT_HOME 2234
 volatile int16_t e = 0;
 volatile uint32_t ticks = 0;
 volatile int32_t diff_i = 0;
@@ -86,33 +88,76 @@ volatile int32_t delta_avg = 0;
 const int32_t DIFF_COEFFS[DIFF_BUF_LEN] = { -85, 384, -768, 469 };
 volatile int16_t diff_buf[DIFF_BUF_LEN] = { 0 };
 volatile uint8_t diff_buf_idx = 0;
-#define CTRL_P 0.04f
-#define CTRL_I 0.0002f
-#define CTRL_D 0.0110f
+volatile int32_t diff_d = 0;
+#define CTRL_GAIN 6.0f
+#define CTRL_P 0.3f
+#define CTRL_I 0.00002f
+#define CTRL_D 0.2f
 
 volatile uint8_t acceled = 0;
 volatile uint8_t downsampler = 0;
+
+volatile int16_t ctrl;
+volatile uint32_t ctrl_ticks;
+
+void ctrl_tick() {
+	abz = enc();
+
+	int8_t state_diff = hall2state[abz] - hall2state[last_abz];
+	int8_t fwd = state_diff <= -3 || (state_diff > 0 && state_diff < 3);
+	uint8_t _stopped = _motor_stopped();
+
+	if(_stopped || (state_diff != 0 && __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1) > 0)) {
+		speed_avg = _stopped ? 0 : (speed_avg * 3 + (fwd ? Kv : -Kv) / (float)max(1, __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1))) / 4; // filter speed a little with moving avg
+	}
+
+	// update pot PID states
+	int16_t delta = pwmin - PWMIN_HOME;
+
+	if(ctrl_ticks > 0)
+		delta_avg = (delta_avg * 7 + delta) / 8;
+	else
+		delta_avg = delta;
+
+	if((ctrl_ticks & 7) == 0) {
+		diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta_avg;
+		diff_d = 0;
+		for(uint8_t i = 0; i < DIFF_BUF_LEN; i++) {
+			diff_d += diff_buf[(diff_buf_idx + i) & (DIFF_BUF_LEN - 1)] * DIFF_COEFFS[i];
+		}
+		diff_d >>= LOG_DIFF_BUF_LEN;
+
+		if(abzs_idx < 256) { //  && ((downsampler & 3) == 0) // && // acceled &&
+			abzs[abzs_idx++] = diff_d; // (__HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1) << 1) | _stopped;
+		}
+//		else {
+//			ctrl_ticks++;
+//		}
+	}
+
+	diff_i += delta;
+	volatile float torque = (delta * CTRL_P + diff_i * CTRL_I + diff_d * CTRL_D) * CTRL_GAIN; // in duty-256-units of torque
+	if(_stopped) {
+		torque *= 2.0f;
+	}
+	ctrl = speed_avg + torque;
+
+	// !_stopped && //  && state_diff > 0
+
+	downsampler++;
+	ctrl_ticks++;
+	last_abz = abz;
+
+	if(_stopped) {
+		motor_tick(1);
+		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
+	}
+}
+
+volatile uint32_t moved_ = 0;
 void motor_tick(uint8_t standstill) {
 	ticks++;
 	abz = enc();
-	int8_t state_diff = hall2state[abz] - hall2state[last_abz];
-	int8_t fwd = state_diff <= -3 || (state_diff > 0 && state_diff < 3);
-	speed_avg = standstill ? 0 : (speed_avg * 15 + (fwd ? Kv : -Kv) / (float)max(1, __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1))) / 16; // filter speed a little with moving avg
-
-
-	// update pot PID states
-	int16_t delta = HAL_ADC_GetValue(&hadc1) - POT_HOME;
-	delta_avg = (delta_avg * 15 + delta) / 16;
-	diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta_avg;
-	int32_t diff_d = 0;
-	for(uint8_t i = 0; i < DIFF_BUF_LEN; i++) {
-		diff_d += diff_buf[(diff_buf_idx + i) & (DIFF_BUF_LEN - 1)] * DIFF_COEFFS[i];
-	}
-	diff_d >>= LOG_DIFF_BUF_LEN;
-
-	diff_i += delta;
-	volatile float torque = delta * CTRL_P + diff_i * CTRL_I + diff_d * CTRL_D; // in duty-256-units of torque
-	volatile int16_t ctrl = speed_avg + torque;
 
 	// SIGNS:
 	// +ctrl => +state
@@ -121,43 +166,36 @@ void motor_tick(uint8_t standstill) {
 
 	volatile uint8_t state = mod6[
 		hall2state[abz]
-		+ (ctrl > 0 ? 0 : 3) // direction reversal
+//		+ (ctrl > 0 ? 0 : 3) // direction reversal
+		+ 3
 		+ 2 // hall-motor offset
 		+ (standstill
 			? 0 // if at standstill, torque stationary
 			: ((speed_avg > 0) ? 1 : -1) // else, assume the speed shows the next direction, plan the next pulse accordingly
 		)
-	]; // + (abz != last_abz && last_abz != -1) // ctrl = 0 -> stall
-//	volatile uint16_t ctrl_ = abs((ctrl * CTRL2CCR_N) / CTRL2CCR_D);
-//	ctrl_ = min(MAX_CCR, ctrl_); // ((ticks) & 0xFF) * MAX_CCR / 0xFF; // 80; // (pwmin - MIN_PWMIN_PULSE) * PWMIN2TARG_N / PWMIN2TARG_D; //
+	];
 
-	uint16_t nccr = min(MAX_CCR, abs(ctrl) + 35); // !acceled *
+	volatile uint16_t nccr = min(MAX_CCR, abs(ctrl) + 35); // !acceled *
 	uint16_t ccer = (state_en[state] & ~TIM1_POL_MSK) | TIM1_POL;
 
+	nccr = min(MAX_CCR, (ticks >> 3) + 200);
+	if(!standstill && !moved_) {
+		moved_ = nccr;
+	}
+	if(moved_) {
+		nccr = 0;
+	}
+
 	// <timer critical region>
-	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = 0;
+//	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = 0;
 	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = nccr;
 	TIM1->CCER = ccer;
+
+	if(moved_) {
+		nccr = 0;
+	}
+
 	// </timer critical region>
 
-//	if(!acceled && ticks > 24000) {
-//		acceled = 1;
-//		ticks = 0;
-//	}
-	if(abzs_idx < 256) { //  && ((downsampler & 3) == 0) // && // acceled &&
-		abzs[abzs_idx++] = diff_d;
-	}
-	downsampler++;
-
-	last_abz = abz;
-
 	__HAL_TIM_CLEAR_IT(&htim4, TIM_IT_TRIGGER);
-
-//	else {
-//		soft_start_coeff = 0;
-//		TIM1->CCER = BRAKE_CCER;
-//		TIM1->CCR1 = BRAKE_CCR;
-//		TIM1->CCR2 = BRAKE_CCR;
-//		TIM1->CCR3 = BRAKE_CCR;
-//	}
 }
