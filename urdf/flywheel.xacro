@@ -1,76 +1,149 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
-  <xacro:macro name="flywheel" params="radius length offset mass motor_mass">
-    <link name="flywheel_link">
-      <visual>
-        <geometry>
-          <cylinder length="${length}" radius="${radius}"/>
-        </geometry>
-      </visual>
-      <!-- <collision>
-        <geometry>
-          <cylinder length="${length}" radius="${radius}"/>
-        </geometry>
-      </collision> -->
-      <inertial>
-        <mass value="${mass + motor_mass}"/>
-        <inertia ixx="${1/12*mass*(3*radius**2 + length**2)}"
-                 ixy="0.0"
-                 ixz="0.0"
-                 iyy="${1/12*mass*(3*radius**2 + length**2)}"
-                 iyz="0.0"
-                 izz="${1/2*mass*(radius**2)}"/>
-      </inertial>
-    </link>
-    
-    <link name="arm2_link">
-      <inertial>
-        <origin rpy="0 0 0" xyz="0 0 0"/>
-        <mass value="0.10206"/>
-        <inertia ixx="0.000001"
-                 ixy="0.00"
-                 ixz="0.00"
-                 iyy="0.000001"
-                 iyz="0.00"
-                 izz="0.000001"/>
-      </inertial>
-    </link>
-    
-    <joint name="arm_prism" type="prismatic">
-      <axis xyz="0 0 1" />
-      <parent link="arm_link" />
-      <child link="arm2_link" />
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
-      <limit lower="0" upper="0.013" effort="1000" velocity="1000" />
-    </joint>
-    
-    <joint name="arm_to_flywheel" type="continuous">
-      <axis xyz="0 0 1"/>
-      <parent link="arm2_link"/>
-      <child link="flywheel_link"/>
-      <origin rpy="0 ${3.1415/2} 0" xyz="0 0 ${offset}"/>
-    </joint>
-  
-    <transmission name="$arm_prism_transmission">
-      <type>transmission_interface/SimpleTransmission</type>
-      <actuator name="$arm_prism_motor">
-        <mechanicalReduction>1</mechanicalReduction>
-      </actuator>
-      <joint name="arm_prism">
-        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      </joint>
-    </transmission>
-    
-    <transmission name="$flywheel_transmission">
-      <type>transmission_interface/SimpleTransmission</type>
-      <actuator name="$flywheel_motor">
-        <mechanicalReduction>1</mechanicalReduction>
-      </actuator>
-      <joint name="arm_to_flywheel">
-        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-      </joint>
-    </transmission>
-  </xacro:macro>
+    <xacro:include filename="$(find pendulum)/urdf/imu.xacro"/>
+    <xacro:property name="piston_offset" value="0.04"/> <!-- m -->
+    <xacro:macro name="flywheel" params="radius length mass motor_mass arm_length solenoid_mass"> <!-- offset -->
+        <link name="flywheel_link">
+            <visual>
+                <geometry>
+                    <cylinder length="${length}" radius="${radius}"/>
+                </geometry>
+            </visual>
+            <inertial>
+                <mass value="${mass + motor_mass + solenoid_mass}"/>
+                <inertia ixx="${1/12*mass*(3*radius**2 + length**2)}"
+                         ixy="0.0"
+                         ixz="0.0"
+                         iyy="${1/12*mass*(3*radius**2 + length**2)}"
+                         iyz="0.0"
+                         izz="${1/2*mass*(radius**2)}"/>
+            </inertial>
+        </link>
+
+        <gazebo reference="arm2_link">
+            <!-- must come before the link definition (major ???) -->
+            <material>Gazebo/Blue</material>
+        </gazebo>
+        <link name="arm2_link">
+            <visual>
+                <origin rpy="0 0 0" xyz="0.01 0 0.0127"/>
+                <geometry>
+                    <cylinder length="0.0254" radius="0.00254"/>
+                </geometry>
+            </visual>
+            <inertial>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <mass value="0.001"/>
+                <inertia ixx="0.000001"
+                         ixy="0.00"
+                         ixz="0.00"
+                         iyy="0.000001"
+                         iyz="0.00"
+                         izz="0.000001"/>
+            </inertial>
+        </link>
+
+        <gazebo reference="arm3_link">
+            <!-- must come before the link definition (major ???) -->
+            <material>Gazebo/Blue</material>
+        </gazebo>
+        <link name="arm3_link">
+            <visual>
+                <origin rpy="0 ${3.1415/2} 0" xyz="0.01 ${-piston_offset} 0.0"/>
+                <geometry>
+                    <cylinder length="0.002" radius="${piston_offset}"/>
+                </geometry>
+            </visual>
+            <inertial>
+                <origin rpy="0 0 0" xyz="0 -0.01 0.0"/>
+                <mass value="0.001"/>
+                <inertia ixx="0.000001"
+                         ixy="0.00"
+                         ixz="0.00"
+                         iyy="0.000001"
+                         iyz="0.00"
+                         izz="0.000001"/>
+            </inertial>
+        </link>
+
+        <link name="arm4_link">
+            <inertial>
+                <origin rpy="0 0 0" xyz="0 0 0"/>
+                <mass value="0.001"/>
+                <inertia ixx="0.000001"
+                         ixy="0.00"
+                         ixz="0.00"
+                         iyy="0.000001"
+                         iyz="0.00"
+                         izz="0.000001"/>
+            </inertial>
+        </link>
+
+
+        <xacro:imu origin="arm4_link"/>
+
+
+        <joint name="arm_piston_base" type="continuous">
+            <axis xyz="1 0 0"/>
+            <parent link="arm_link"/>
+            <child link="arm2_link"/>
+            <origin rpy="0 0 0" xyz="0 0 ${arm_length}"/>
+        </joint>
+        <joint name="arm_piston_top" type="continuous">
+            <axis xyz="1 0 0"/>
+            <parent link="arm2_link"/>
+            <child link="arm3_link"/>
+            <origin rpy="0 0 0" xyz="0 0 0.0254"/>
+        </joint>
+        <joint name="arm_piston_driver" type="revolute">
+            <axis xyz="1 0 0"/>
+            <parent link="arm3_link"/>
+            <child link="arm4_link"/>
+            <origin rpy="0 0 0" xyz="0 ${-piston_offset} 0"/>
+            <limit lower="0" upper="${3.1415/4}" effort="1000" velocity="1000"/>
+        </joint>
+
+        <gazebo>
+            <joint name="arm_piston_align" type="prismatic">
+                <axis>
+                    <xyz>0 0 1</xyz>
+                    <limit>
+                        <lower>-1</lower>
+                        <upper>1</upper>
+                    </limit>
+                </axis>
+                <parent>arm_link</parent>
+                <child>arm4_link</child>
+                <pose>0 0 0 0 0 0</pose>
+            </joint>
+        </gazebo>
+
+        <joint name="arm_to_flywheel" type="continuous">
+            <axis xyz="0 0 1"/>
+            <parent link="arm4_link"/>
+            <child link="flywheel_link"/>
+            <origin rpy="0 ${3.1415/2} 0" xyz="0 ${piston_offset} ${radius}"/> <!-- ${offset} -->
+        </joint>
+
+        <transmission name="$arm_piston_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <actuator name="$arm_piston_motor">
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+            <joint name="arm_piston_driver">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+        </transmission>
+
+        <transmission name="$flywheel_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <actuator name="$flywheel_motor">
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+            <joint name="arm_to_flywheel">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+        </transmission>
+    </xacro:macro>
 </robot>
 
