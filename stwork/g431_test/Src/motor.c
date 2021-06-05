@@ -21,6 +21,159 @@ Plus the diodes can take those couple of amps, for the off-time (~10us) energy
   transfer is small enough (since the diode resistance >> motor coil resistance (although isn't that worse re: i2r?))
 anyways, worst thing for power is to short to ground so don't do that
  */
+
+#define PWMIN_HOME 1332
+volatile uint16_t adc1_reg[8] = { 0 };
+volatile uint16_t pwmin = 0;
+volatile uint8_t abz;
+volatile uint16_t abzs[1024] = { 0 };
+volatile uint16_t abzs_idx = 0;
+volatile uint8_t last_abz = 0xFF;
+#define POT_HOME 2234
+volatile int16_t e = 0;
+volatile int32_t diff_i = 0;
+
+volatile fwd_t fwd = 0;
+volatile float speed_avg = 0;
+
+volatile int32_t delta_avg = 0;
+#define DIFF_BUF_LEN 4
+#define LOG_DIFF_BUF_LEN 2
+const int32_t DIFF_COEFFS[DIFF_BUF_LEN] = { -85, 384, -768, 469 };
+volatile int16_t diff_buf[DIFF_BUF_LEN] = { 0 };
+volatile uint8_t diff_buf_full_ = 0;
+volatile uint8_t diff_buf_idx = 0;
+volatile int32_t diff_d = 0;
+
+#define NUM_VCAL 10
+const float VCAL[2][2][NUM_VCAL] = {
+	{ // BACKWARDS
+		{ 0.9537440843592074f, 9.59268823e-01f, 1.15130663e+00f, 1.92385442f  , 2.68662071f  , 3.44659201f , 4.20293755f  , 4.9560314f   , 5.71134057f  , 105.71134056698827f},
+		{ 0.0f               , 6.76634206f    , 46.78531916f   , 210.65292091f, 356.51508298f, 459.4140404f, 538.26692847f, 605.01989394f, 637.74173513f, 4103.537454325323f},
+	},
+	{ // FORWARDS
+		{ 0.9537440843592074f, 9.59268823e-01f, 1.15130663e+00f, 1.92300616e+00f, 2.68423498e+00f, 3.44232523e+00f, 4.19633929e+00f, 4.94592952e+00f, 5.69879707e+00f, 105.69879706888129f },
+		{ 0.0f               , 6.76634206f    , 46.78531916f   , 218.15946086f  , 378.14152672f  , 498.62810727f  , 587.30544773f  , 658.10862762f  , 688.8220895f   , 3952.446568428597f },
+	}
+};
+
+//#define CTRL_GAIN 6.0f
+//#define CTRL_P 0.6f
+//#define CTRL_I 0.00002f
+//#define CTRL_D 0.1f // 0.2f
+
+#define CTRL_GAIN 1.0f
+#define CTRL_P 0.737f
+#define CTRL_D 1.466f // 0.391f
+#define CTRL_FLYV -0.30508f
+#define CTRL_I 0.0f
+
+volatile uint8_t acceled = 0;
+volatile uint8_t downsampler = 0;
+
+volatile float ctrl;
+volatile uint32_t ctrl_ticks;
+
+volatile uint16_t standstill_ccr0 = 0;
+//volatile uint16_t stopped_counter = 0;
+volatile float stopped_ctrl[64] = { 0 };
+volatile float stopped_torque[64] = { 0 };
+volatile uint8_t stopped_data_idx = 0;
+
+void ctrl_tick() {
+	standstill_ccr0 = VCAL[0][0][0] / (VBUS_ADC2V * adc1_reg[1]) * (float)__HAL_TIM_GET_AUTORELOAD(&htim1);
+
+	uint8_t _stopped = _motor_stopped();
+	if(1) {
+		uint16_t delta_t = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
+		float next_speed = delta_t > 0 ? (TICK2RADS / (float)delta_t) : 0.0f;
+		switch(fwd) {
+			case FWD_T_FWD:
+				break;
+			case FWD_T_BKWD:
+				next_speed *= -1.0f;
+				break;
+			case FWD_T_STILL:
+				next_speed = 0.0f;
+				break;
+		}
+
+		speed_avg = _stopped ? 0 : (speed_avg * 15 + next_speed) / 16; // filter speed a little with moving avg
+
+		float bemf_ccr = 0.0f;
+		if(adc1_reg[1] > 0) {
+			float bemf = 0.0f;
+			if(fwd != FWD_T_STILL) {
+				uint8_t fwd_ = fwd == FWD_T_FWD ? 1 : 0; // also stash to avoid preemption
+				for(uint8_t i = 1; i < NUM_VCAL; i++) {
+					if(speed_avg < VCAL[fwd_][1][i]) {
+						bemf = VCAL[fwd_][0][i] + (speed_avg - VCAL[fwd_][1][i - 1]) / (VCAL[fwd_][1][i] - VCAL[fwd_][1][i - 1]) * (VCAL[fwd_][0][i] - VCAL[fwd_][0][i - 1]);
+						break;
+					}
+				}
+			}
+			bemf_ccr = bemf / (VBUS_ADC2V * adc1_reg[1]) * (float)__HAL_TIM_GET_AUTORELOAD(&htim1);
+		}
+
+		// update pot PID states
+		int16_t delta = pwmin - PWMIN_HOME;
+
+		if(ctrl_ticks > 0)
+			delta_avg = (delta_avg * 7 + delta) / 8;
+		else
+			delta_avg = delta;
+
+		if((ctrl_ticks & 0) == 0) {
+			diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta_avg;
+			diff_d = 0;
+			diff_buf_full_ |= diff_buf_idx > DIFF_BUF_LEN;
+			if(diff_buf_full_) {
+				for(uint8_t i = 0; i < DIFF_BUF_LEN; i++) {
+					diff_d += diff_buf[(diff_buf_idx + i) & (DIFF_BUF_LEN - 1)] * DIFF_COEFFS[i];
+				}
+				diff_d >>= LOG_DIFF_BUF_LEN;
+			}
+		}
+
+		diff_i += delta;
+		volatile float torque = (delta * CTRL_P + diff_i * CTRL_I + diff_d * CTRL_D + speed_avg * CTRL_FLYV) * CTRL_GAIN; // in duty-256-units of torque
+		if(_stopped) {
+			torque *= 1.2f;
+		}
+		ctrl = speed_avg - torque;
+
+		if(abzs_idx < 256) { //  && ((downsampler & 3) == 0) // && // acceled &&
+			abzs[abzs_idx++] = diff_d; // (__HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1) << 1) | _stopped;
+		}
+
+		// !_stopped && //  && state_diff > 0
+
+		downsampler++;
+		ctrl_ticks++;
+
+		if(_stopped && stopped_data_idx >= 64) {
+			stopped_data_idx = 0;
+		}
+		else if(stopped_data_idx < 64) {
+			stopped_ctrl[stopped_data_idx] = ctrl;
+			stopped_torque[stopped_data_idx] = torque;
+			stopped_data_idx++;
+		}
+		else {
+			stopped_data_idx = 64;
+		}
+	}
+
+	if(_stopped) {
+		motor_tick(1);
+		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
 const uint16_t state_en[6] = {
 //	0b010000010000, // -+0
 //	0b000000010100, // 0+-
@@ -35,6 +188,14 @@ const uint16_t state_en[6] = {
 	0b000101000000, // +-0
 	0b000001000001, // 0-+
 	0b010000000001, // -0+
+};
+volatile uint32_t* const state_ccr_[6][3] = {
+	{&(TIM1->CCR2), &(TIM1->CCR3), &(TIM1->CCR1)}, // common CCR going bckwd to here, "" fwd to here, free
+	{&(TIM1->CCR1), &(TIM1->CCR2), &(TIM1->CCR3)},
+	{&(TIM1->CCR3), &(TIM1->CCR1), &(TIM1->CCR2)},
+	{&(TIM1->CCR2), &(TIM1->CCR3), &(TIM1->CCR1)},
+	{&(TIM1->CCR1), &(TIM1->CCR2), &(TIM1->CCR3)},
+	{&(TIM1->CCR3), &(TIM1->CCR1), &(TIM1->CCR2)},
 };
 #define HALL2STATE_INVALID 0 // use legal values for invalid, juuuust in case
 // 1 0 2 2 3 1
@@ -69,95 +230,33 @@ const uint8_t mod6[18] = { 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5 
 //volatile int32_t ctrl_i = 0, ctrl_p = 0, ctrl_d_buf[NUM_CTRL_D_BUF] = { 0 };
 //volatile uint8_t ctrl_d_idx = 0;
 
-#define PWMIN_HOME 123
-volatile uint16_t pwmin = 0;
-extern volatile uint8_t abz;
-volatile int16_t abzs[256] = { 0 };
-volatile uint16_t abzs_idx = 0;
-volatile uint8_t last_abz = 0xFF;
-#define POT_HOME 2234
-volatile int16_t e = 0;
 volatile uint32_t ticks = 0;
-volatile int32_t diff_i = 0;
-
-volatile float speed_avg = 0;
-
-volatile int32_t delta_avg = 0;
-#define DIFF_BUF_LEN 4
-#define LOG_DIFF_BUF_LEN 2
-const int32_t DIFF_COEFFS[DIFF_BUF_LEN] = { -85, 384, -768, 469 };
-volatile int16_t diff_buf[DIFF_BUF_LEN] = { 0 };
-volatile uint8_t diff_buf_idx = 0;
-volatile int32_t diff_d = 0;
-#define CTRL_GAIN 6.0f
-#define CTRL_P 0.3f
-#define CTRL_I 0.00002f
-#define CTRL_D 0.2f
-
-volatile uint8_t acceled = 0;
-volatile uint8_t downsampler = 0;
-
-volatile int16_t ctrl;
-volatile uint32_t ctrl_ticks;
-
-void ctrl_tick() {
-	abz = enc();
-
-	int8_t state_diff = hall2state[abz] - hall2state[last_abz];
-	int8_t fwd = state_diff <= -3 || (state_diff > 0 && state_diff < 3);
-	uint8_t _stopped = _motor_stopped();
-
-	if(_stopped || (state_diff != 0 && __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1) > 0)) {
-		speed_avg = _stopped ? 0 : (speed_avg * 3 + (fwd ? Kv : -Kv) / (float)max(1, __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1))) / 4; // filter speed a little with moving avg
-	}
-
-	// update pot PID states
-	int16_t delta = pwmin - PWMIN_HOME;
-
-	if(ctrl_ticks > 0)
-		delta_avg = (delta_avg * 7 + delta) / 8;
-	else
-		delta_avg = delta;
-
-	if((ctrl_ticks & 7) == 0) {
-		diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta_avg;
-		diff_d = 0;
-		for(uint8_t i = 0; i < DIFF_BUF_LEN; i++) {
-			diff_d += diff_buf[(diff_buf_idx + i) & (DIFF_BUF_LEN - 1)] * DIFF_COEFFS[i];
-		}
-		diff_d >>= LOG_DIFF_BUF_LEN;
-
-		if(abzs_idx < 256) { //  && ((downsampler & 3) == 0) // && // acceled &&
-			abzs[abzs_idx++] = diff_d; // (__HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1) << 1) | _stopped;
-		}
-//		else {
-//			ctrl_ticks++;
-//		}
-	}
-
-	diff_i += delta;
-	volatile float torque = (delta * CTRL_P + diff_i * CTRL_I + diff_d * CTRL_D) * CTRL_GAIN; // in duty-256-units of torque
-	if(_stopped) {
-		torque *= 2.0f;
-	}
-	ctrl = speed_avg + torque;
-
-	// !_stopped && //  && state_diff > 0
-
-	downsampler++;
-	ctrl_ticks++;
-	last_abz = abz;
-
-	if(_stopped) {
-		motor_tick(1);
-		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
-	}
-}
+volatile uint16_t speed_buf[64] = { 0 };
+volatile uint8_t speed_buf_idx = 0;
+volatile uint16_t v_buf[64] = { 0 };
+volatile uint8_t v_buf_idx = 0;
 
 volatile uint32_t moved_ = 0;
+const uint8_t FWD_OFFSETS[NUM_FWD_TS] = { 1, 3, 2 };
+volatile fwd_t last_fwd = FWD_T_STILL;
 void motor_tick(uint8_t standstill) {
+	if(!standstill) {
+		__HAL_TIM_CLEAR_IT(&htim4, TIM_IT_TRIGGER); // clear the interrupt that triggers whenever TIM1 resets (either by overflow or by hall tick)
+	}
+
 	ticks++;
 	abz = enc();
+
+	int8_t state_diff = (int8_t)hall2state[abz] - (int8_t)hall2state[last_abz];
+	if(standstill) {
+		fwd = FWD_T_STILL;
+	}
+	else if(state_diff <= -3 || (state_diff > 0 && state_diff < 3)) {
+		fwd = FWD_T_FWD;
+	}
+	else {
+		fwd = FWD_T_BKWD;
+	}
 
 	// SIGNS:
 	// +ctrl => +state
@@ -166,36 +265,76 @@ void motor_tick(uint8_t standstill) {
 
 	volatile uint8_t state = mod6[
 		hall2state[abz]
-//		+ (ctrl > 0 ? 0 : 3) // direction reversal
-		+ 3
-		+ 2 // hall-motor offset
-		+ (standstill
-			? 0 // if at standstill, torque stationary
-			: ((speed_avg > 0) ? 1 : -1) // else, assume the speed shows the next direction, plan the next pulse accordingly
-		)
+		+ (ctrl > 0 ? 0 : 3) // direction reversal
+		+ FWD_OFFSETS[fwd]
 	];
 
-	volatile uint16_t nccr = min(MAX_CCR, abs(ctrl) + 35); // !acceled *
+	volatile uint16_t nccr_candidate = (fabs(ctrl) + TAU0); //  * TAU2VOLT / (adc1_reg[1] * VBUS_ADC2V) * __HAL_TIM_GET_AUTORELOAD(&htim1);
+	volatile uint16_t nccr = min(MAX_CCR, nccr_candidate); // (standstill ? standstill_ccr0 : 0)); // !acceled *
+
+
 	uint16_t ccer = (state_en[state] & ~TIM1_POL_MSK) | TIM1_POL;
 
-	nccr = min(MAX_CCR, (ticks >> 3) + 200);
-	if(!standstill && !moved_) {
-		moved_ = nccr;
-	}
-	if(moved_) {
-		nccr = 0;
-	}
-
 	// <timer critical region>
-//	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = 0;
+
 	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = nccr;
 	TIM1->CCER = ccer;
 
-	if(moved_) {
-		nccr = 0;
-	}
-
 	// </timer critical region>
 
-	__HAL_TIM_CLEAR_IT(&htim4, TIM_IT_TRIGGER);
+	if(last_fwd != fwd && last_fwd != FWD_T_STILL && fwd != FWD_T_STILL) {
+		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM); // commutate immediately because it just ticked to the wrong direction
+	}
+	last_fwd = fwd;
+
+	if(!standstill) {
+		last_abz = abz;
+	}
 }
+
+/**
+ * Misc useful timer critical region functions
+ */
+
+//	if(HAL_GetTick() > 7000) {
+//		nccr = 0;
+//		uint16_t abzs_idx_ = (abzs_idx + 3) >> 2;
+//		if(abzs_idx_ < 1024 && !standstill) {
+//			abzs[abzs_idx_] = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
+//			abzs_idx++;
+//		}
+////		else if(abzs_idx_ >= 1024) {
+////			nccr = 0;
+////		}
+//	}
+
+// // ---
+
+//	if(HAL_GetTick() < 20000) {
+//		nccr = min(MAX_CCR, 300);
+//		speed_buf[(speed_buf_idx++) & 63] = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
+//		v_buf[(v_buf_idx++) & 63] = adc1_reg[1];
+//	}
+//	else {
+//		nccr = 0;
+//	}
+
+// // ---
+
+//	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = 0;
+
+// // ---
+
+//	{
+		// tried to make one of the coil terminals hold its level at 100% duty
+		// to improve the inductor charging, but this doesn't actually make that big of a
+		// difference to the off-phase of the PWM, only improving the coil discharge rate
+		// by the FET diode turn-on voltage, plus for many speeds it may discharge completely
+		// anyways. This introduced timing and prediction problems trying to guess the next state
+		// and made the motor less efficient, so I'm abandoning this for now.
+//		uint8_t next_state = state; // standstill ? mod6[state + (ctrl > 0 ? 1 : 5)] : state;
+//		uint8_t fwd_ = 1; // standstill ? ctrl > 0 : fwd;
+//
+//		*state_ccr_[next_state][fwd_] = nccr;
+//		*state_ccr_[next_state][!fwd_] = *state_ccr_[next_state][2] = 1024;
+//	}

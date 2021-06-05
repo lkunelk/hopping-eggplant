@@ -10,6 +10,10 @@
 
 #include "main.h"
 
+typedef enum {
+	FWD_T_BKWD = 0, FWD_T_FWD, FWD_T_STILL, NUM_FWD_TS
+} fwd_t;
+
 inline uint8_t _motor_stopped(void) {
 	return __HAL_TIM_GET_COUNTER(&htim4) == 0 && __HAL_TIM_GET_FLAG(&htim4, TIM_FLAG_TRIGGER) == RESET;
 }
@@ -25,7 +29,7 @@ void motor_tick(uint8_t standstill);
 
 #define MIN_PWMIN_PULSE 500
 #define MAX_PWMIN_PULSE 2500
-#define PWMIN_LIM 900
+#define PWMIN_LIM 1400
 
 #define BRAKE_CCER 0x444
 #define BRAKE_CCR 192
@@ -37,7 +41,7 @@ void motor_tick(uint8_t standstill);
 #define ENC2TARG_D 11
 #define CTRL2CCR_N 6
 #define CTRL2CCR_D 1
-#define MAX_CCR 700
+#define MAX_CCR 1200
 #define MAX_TICK 70
 #define HALL_TICK_BLACKOUT 3 // number of TIM6 cycles to blackout on timer-based ticks
 #define PCCR 220
@@ -54,7 +58,11 @@ void motor_tick(uint8_t standstill);
 //#define CTRL_P_N 1
 //#define CTRL_P_D 1
 
+#define TICK2RADS 149599.65f // numerator converting ticks in 1/us to rad/s
+#define VBUS_ADC2V 0.00893f
 #define Kv 26098.1f // at 8.1V, %PWM-256 * (us / tick) (includes drag/damping friction)
 #define Ki 93028.77894443E-12 // at 8.1V, tick/us^2/%PWM
+#define TAU0 284.032f
+#define TAU2VOLT 0.0032747f
 
 #endif /* MOTOR_H_ */

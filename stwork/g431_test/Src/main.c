@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "opamp.h"
 #include "tim.h"
 #include "gpio.h"
@@ -48,8 +49,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-// TEMP
-volatile uint8_t abz = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,7 +60,8 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+extern volatile uint16_t adc1_reg[8];
+extern DMA_HandleTypeDef hdma_adc1;
 /* USER CODE END 0 */
 
 /**
@@ -78,6 +79,7 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
+
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -91,6 +93,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_OPAMP1_Init();
   MX_OPAMP2_Init();
   MX_OPAMP3_Init();
@@ -100,17 +103,24 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
+
 //  htim1.Instance->DIER |= TIM_DIER_COMIE;
+  hadc1.Instance->CFGR |= ADC_CFGR_DMACFG;
+  // NOTE: the DMA must always be able to service the ADC: if the ADC OVR's, it'll stop DMA-ing even if the overrun behavior is set to overwrite (which doesn't make sense to me...)
+  HAL_ADC_Start_DMA(&hadc1, adc1_reg, 2);
+  hdma_adc1.Instance->CCR &= ~(DMA_CCR_HTIE | DMA_CCR_TEIE | DMA_CCR_TCIE);
+
   htim1.Instance->CR2 |= TIM_CR2_CCUS | TIM_CR2_CCPC;
   HAL_TIM_Base_Start(&htim1);
 
 
-  extern uint16_t state_en[6];
-  htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = 600;
-  TIM1->CCER = state_en[5];
-  HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
+//  extern uint16_t state_en[6];
+//  htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = 600;
+//  TIM1->CCER = state_en[5];
+//  HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
+//
+//  HAL_Delay(600);
 
-  HAL_Delay(600);
 
   htim4.Instance->DIER |= TIM_DIER_CC2IE;
   htim4.Instance->CCER |= TIM_CCER_CC1E; // | TIM_CCER_CC2E;

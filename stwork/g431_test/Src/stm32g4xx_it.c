@@ -63,6 +63,7 @@ volatile int8_t tick_blackout = 0;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
+extern DMA_HandleTypeDef hdma_adc1;
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
@@ -208,6 +209,20 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles DMA1 channel1 global interrupt.
+  */
+void DMA1_Channel1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_adc1);
+  /* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel1_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM1 trigger and commutation interrupts and TIM17 global interrupt.
   */
 void TIM1_TRG_COM_TIM17_IRQHandler(void)
@@ -278,16 +293,6 @@ void TIM7_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM4) {
-		motor_tick(0);
-	}
-}
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM6 && __HAL_ADC_GET_FLAG(&hadc1, ADC_FLAG_EOC)) {
-		ctrl_tick();
-	}
-}
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 
 }
@@ -296,6 +301,7 @@ volatile uint8_t last_r = 0;
 extern volatile uint16_t pwmin;
 volatile uint16_t pwmins[64] = { 0 };
 volatile uint8_t pwmins_idx = 0;
+volatile uint8_t pwmin_triggered = 0;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if(GPIO_Pin == PWMIN_Pin) {
 		uint8_t r = HAL_GPIO_ReadPin(PWMIN_GPIO_Port, PWMIN_Pin);
@@ -306,13 +312,26 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			else
 				pwmin = tim + (0xFFFF - tim_posedge);
 //			if(pwmin_ < MAX_PWMIN_PULSE && pwmin_ > MIN_PWMIN_PULSE) {
-			if(pwmins_idx < 64 && tim > 0)
-				pwmins[(++pwmins_idx) & 63] = tim;
+			if(pwmins_idx < 64 && tim > 0) //  &&
+				pwmins[(++pwmins_idx) & 63] = pwmin;
+
+			pwmin_triggered = 1;
 		}
 		else if(last_r == 0 && r == 1) {
 			tim_posedge = tim;
 		}
 		last_r = r;
+	}
+}
+void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
+	if(htim->Instance == TIM4) {
+		motor_tick(0);
+	}
+}
+extern volatile uint16_t pwmin;
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if(htim->Instance == TIM6 && pwmin_triggered > 0) {
+		ctrl_tick();
 	}
 }
 /* USER CODE END 1 */
