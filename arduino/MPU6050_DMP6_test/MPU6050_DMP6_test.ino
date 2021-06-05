@@ -196,18 +196,48 @@ void setup() {
     Serial.println(F("Initializing DMP..."));
     devStatus = mpu.dmpInitialize();
 
+//    int16_t xoff = -430, yoff = -72, zoff = 1109;
+    int16_t xoff = -392, yoff = -213, zoff = 1301;
+    uint8_t bank[6] = { xoff >> 8, yoff & 0xFF, yoff >> 8, zoff & 0xFF, zoff >> 8, xoff & 0xFF };
     // supply your own gyro offsets here, scaled for min sensitivity
-    mpu.setXGyroOffset(220);
-    mpu.setYGyroOffset(76);
-    mpu.setZGyroOffset(-85);
-    mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+    // DL: min sensitivity? really? okay.
+//    Serial.print(mpu.getXAccelOffset()); Serial.print('\t');
+//    Serial.print(mpu.getYAccelOffset()); Serial.print('\t');
+//    Serial.println(mpu.getZAccelOffset()); // Serial.print('\t');
+//    mpu.setYAccelOffset(0xFF << 8 | 0xFF);
+//    mpu.setZAccelOffset((-171 & 0xFF) << 8 | 0b101);
+    if(1) {
+      // ARRGGGHHHH
+      // so they only let you set these registers if you set the whole word, starting with the MSB which seems to LOCK the register
+      // so it's actually impossible to set all three aside from some weird voodoo that they aren't disclosing
+      // so for now, just calibrate X and Y. set MSB z. EFFF.
+      mpu.setZAccelOffset((zoff & 0xFF00) | (xoff & 0xFF)); // i think invensense really doesn't want us touchy-touchy with these registers
+      mpu.setXAccelOffset((xoff & 0xFF00) | (yoff & 0xFF));
+      mpu.setYAccelOffset((yoff & 0xFF00) | (zoff & 0xFF));
+//      I2Cdev::writeByte(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_ZA_OFFS_H, (zoff & 0xFF00));
+    }
+    else {
+      I2Cdev::writeBytes(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_XA_OFFS_H, 6, bank); // nope. doesn't work.
+    }
+    
+    // A) the MSB must be set for the LSB to be active
+    // B) it must be set as a word
+    // C) the twisting of the bytes is very... unfriendly, to say the least
+
+//    I2Cdev::writeByte(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_YA_OFFS_H-1, 0x00);
+//    I2Cdev::writeByte(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_YA_OFFS_H, 0xFF); // nope, doesn't work.
+    
+    // ohhhh. so the offsets aren't 16-bit. They take higher significant bits. No WONDER this was impossible to calibrate.
+    // it just cans the least significant 8 bits. Sigh... of course. One of those registers is probably do-not-care or even something we shouldn't be programming.
+    // Should've figured...
 
     // make sure it worked (returns 0 if so)
     if (devStatus == 0) {
         // Calibration Time: generate offsets and calibrate our MPU6050
-        mpu.CalibrateAccel(6);
+//        mpu.CalibrateAccel(6);
         mpu.CalibrateGyro(6);
-        mpu.PrintActiveOffsets();
+//        mpu.PrintActiveOffsets();
+
         // turn on the DMP, now that it's ready
         Serial.println(F("Enabling DMP..."));
         mpu.setDMPEnabled(true);
@@ -238,6 +268,7 @@ void setup() {
     // configure LED for output
     pinMode(LED_PIN, OUTPUT);
     pinMode(10, OUTPUT);
+    digitalWrite(LED_PIN, HIGH);
 }
 
 
@@ -246,31 +277,62 @@ void setup() {
 // ===                    MAIN PROGRAM LOOP                     ===
 // ================================================================
 
+#define T0 (-1.78f)
+#define Trange (0.2f)
+
 void loop() {
-    // if programming failed, don't try to do anything
-    if (!dmpReady) return;
-    // read a packet from FIFO
-    if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) { // Get the Latest packet 
-    
-      // display Euler angles in degrees
-      mpu.dmpGetQuaternion(&q, fifoBuffer);
-      mpu.dmpGetEuler(euler, &q);
-
-      float angle = euler[0] * 180/M_PI;
+  // if programming failed, don't try to do anything
+  if (!dmpReady) return;
+  // read a packet from FIFO
+  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) { // Get the Latest packet 
   
-      // write off euler[0] +/-50 degrees (0 - 255)
+    // display Euler angles in degrees
+    mpu.dmpGetQuaternion(&q, fifoBuffer);
+    VectorFloat g;
+    mpu.dmpGetGravity(&g, &q);
+    
 
-      int fromLow = -105-3.4;
-      int fromHigh = -55-3.4;
-      int toHi = 255;
-      
-      float remapped_val = (angle  - fromLow) / (fromHigh - fromLow) * toHi;
-      int constrained_val = constrain(remapped_val, 0, 255);
-      analogWrite(10, constrained_val);
-     
-      Serial.print("euler\t");
-      Serial.print(angle);
-      Serial.print("\tcons:");
-      Serial.println(constrained_val);
-    }
+    float angle = atan2(g.x, g.y); // euler[0] * 180/M_PI;
+    uint8_t aval = constrain(((angle - T0) / Trange + 1.0f) * 128.0f, 0, 255);
+    
+    analogWrite(10, aval);
+   
+    Serial.print("euler\t");
+    Serial.print(angle);
+    Serial.print("\tcons:");
+    Serial.println(aval);
+  }
+}
+
+void print_raw() {
+  int16_t ax, ay, az;
+  int16_t gx, gy, gz;
+  // read raw accel/gyro measurements from device
+    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+    // these methods (and a few others) are also available
+    //accelgyro.getAcceleration(&ax, &ay, &az);
+    //accelgyro.getRotation(&gx, &gy, &gz);
+    #define OUTPUT_READABLE_ACCELGYRO 1
+    #ifdef OUTPUT_READABLE_ACCELGYRO
+        // display tab-separated accel/gyro x/y/z values
+        Serial.print("a/g:\t");
+        Serial.print(ax); Serial.print("\t");
+        Serial.print(ay); Serial.print("\t");
+        Serial.print(az); Serial.print("\t");
+        Serial.print(gx); Serial.print("\t");
+        Serial.print(gy); Serial.print("\t");
+        Serial.println(gz);
+    #endif
+
+    #ifdef OUTPUT_BINARY_ACCELGYRO
+        Serial.write((uint8_t)(ax >> 8)); Serial.write((uint8_t)(ax & 0xFF));
+        Serial.write((uint8_t)(ay >> 8)); Serial.write((uint8_t)(ay & 0xFF));
+        Serial.write((uint8_t)(az >> 8)); Serial.write((uint8_t)(az & 0xFF));
+        Serial.write((uint8_t)(gx >> 8)); Serial.write((uint8_t)(gx & 0xFF));
+        Serial.write((uint8_t)(gy >> 8)); Serial.write((uint8_t)(gy & 0xFF));
+        Serial.write((uint8_t)(gz >> 8)); Serial.write((uint8_t)(gz & 0xFF));
+    #endif
+
+    return;
 }
