@@ -9,17 +9,26 @@
     <include>
       <uri>model://ground_plane</uri>
     </include>
+    <!-- <include>
+      <uri>model://pendulum</uri>
+    </include> -->
     <gui>
       <camera name="user_camera">
         <pose>1.5 0 0.1 0 0.08 3.141592</pose>
       </camera>
     </gui>
     
-    <physics name="ode_cfm_0p3" type="ode" default="true">
-      <real_time_update_rate>50</real_time_update_rate>
+    <physics type="ode" default="true">
+      <max_step_size>0.00001</max_step_size>
+      <real_time_update_rate>100</real_time_update_rate>
       <ode>
+        <solver>
+          <type>world</type>
+          <iters>1000</iters>
+        </solver>
         <constraints>
-          <cfm>0.3</cfm>
+          <cfm>0.001</cfm>
+          <contact_max_correcting_vel>0</contact_max_correcting_vel>
         </constraints>
       </ode>
     </physics>

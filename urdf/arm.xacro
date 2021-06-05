@@ -1,112 +1,47 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
-  <xacro:macro name="arm" params="length width linear_density">
-  
-  <xacro:property name="mass" value="${linear_density * length}" />
-  
-  <link name="arm_link">
-    <visual>
-      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-      <geometry>
-        <box size="${width} ${width} ${length}"/>
-      </geometry>
-    </visual>
-    <!-- <collision>
-      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-      <geometry>
-        <box size="${width} ${width} ${length}"/>
-      </geometry>
-    </collision> -->
-    <inertial>
-      <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
-      <mass value="${linear_density * length}"/>
-      <inertia ixx="${mass/12*(width**2 + width**2)}"
-               ixy="0.00"
-               ixz="0.00"
-               iyy="${mass/12*(width**2 + width**2)}"
-               iyz="0.00"
-               izz="${mass/12*(width**2 + width**2)}"/>
-    </inertial>
-  </link>
-  
-  <link name="arm0_link">
-    <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.001"/>
-      <inertia ixx="0.0000001"
-               ixy="0.00"
-               ixz="0.00"
-               iyy="0.0000001"
-               iyz="0.00"
-               izz="0.0000001"/>
-    </inertial>
-  </link>
-  
-  <!-- <link name="arm1_link">
-    <inertial>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <mass value="0.001"/>
-      <inertia ixx="0"
-               ixy="0.00"
-               ixz="0.00"
-               iyy="10"
-               iyz="0.00"
-               izz="10"/>
-    </inertial>
-  </link> -->
-  
-  <joint name="base_free_theta" type="continuous">
-    <parent link="arm0_link" />
-    <child link="arm_link" />
-    <axis xyz="1 0 0" />
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <limit effort="1000" velocity="1000" />
-  </joint>
-  
-  <joint name="arm_spring" type="prismatic">
-    <axis xyz="0 0 1" />
-    <parent link="base_link" />
-    <child link="arm0_link" />
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
-    <limit lower="-1" upper="0" effort="1000" velocity="1000" />
-  </joint>
-  
-  <!-- <joint name="arm_fix" type="fixed">
-    <parent link="arm1_link" />
-    <child link="arm2_link" />
-  </joint> -->
+    <xacro:macro name="arm" params="length width linear_density">
 
-  <!-- <transmission name="$arm_transmission">
-    <type>transmission_interface/SimpleTransmission</type>
-    <actuator name="$arm_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-    <joint name="base_to_arm">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-  </transmission> -->
-  
-  <transmission name="$arm_spring_transmission">
-    <type>transmission_interface/SimpleTransmission</type>
-    <actuator name="$arm_spring_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-    <joint name="arm_spring">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-  </transmission>
-  
-  <transmission name="$arm_prism_transmission">
-    <type>transmission_interface/SimpleTransmission</type>
-    <actuator name="$arm_prism_motor">
-      <mechanicalReduction>1</mechanicalReduction>
-    </actuator>
-    <joint name="arm_prism">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-  </transmission>
+        <xacro:property name="mass" value="${linear_density * length}"/>
 
-</xacro:macro>
+        <link name="arm_link">
+            <visual>
+                <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+                <geometry>
+                    <cylinder radius="${width/2}" length="${length}"/>
+                </geometry>
+            </visual>
+            <inertial>
+                <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+                <mass value="${linear_density * length}"/>
+                <inertia ixx="${mass/12*(width**2 + width**2)}"
+                         ixy="0.00"
+                         ixz="0.00"
+                         iyy="${mass/12*(width**2 + width**2)}"
+                         iyz="0.00"
+                         izz="${mass/12*(width**2 + width**2)}"/>
+            </inertial>
+        </link>
+
+        <joint name="arm_spring" type="prismatic">
+            <parent link="base_link"/>
+            <child link="arm_link"/>
+            <axis xyz="0 0 1"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
+            <limit lower="-1" upper="0" effort="1000" velocity="1000"/>
+        </joint>
+
+        <transmission name="$arm_spring_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <actuator name="$arm_spring_motor">
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+            <joint name="arm_spring">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+        </transmission>
+
+    </xacro:macro>
 </robot>
 
