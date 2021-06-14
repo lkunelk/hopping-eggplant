@@ -45,6 +45,8 @@ void motor_tick(uint8_t standstill);
 #define MAX_TICK 70
 #define HALL_TICK_BLACKOUT 3 // number of TIM6 cycles to blackout on timer-based ticks
 #define PCCR 220
+
+#define UART_RX_BUF_SIZE 2
 // Note about PCC:
 // high-side PWM just to recharge bootstrap cap; also sets absolute max CCR
 // @2 downsampling, 55ccr = 260us off-time -> given 10-ohm ESR cap, 63us time constant, we're fine (2%)

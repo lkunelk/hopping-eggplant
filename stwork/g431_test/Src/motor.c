@@ -23,7 +23,16 @@ anyways, worst thing for power is to short to ground so don't do that
  */
 
 #define PWMIN_HOME 925
+#define TILT_HOME 78
 volatile uint16_t adc1_reg[8] = { 0 };
+volatile uint8_t uart_rx_buf[UART_RX_BUF_SIZE] = { 0 };
+volatile uint8_t uart_rx_valid = 0;
+typedef struct imu_t {
+	int8_t tilt;
+	int8_t gyro;
+} imu_t;
+volatile imu_t imu = { 0 };
+volatile imu_t imu_avg = { 0 };
 volatile uint16_t pwmin = 0;
 volatile uint8_t abz;
 volatile uint16_t abzs[1024] = { 0 };
@@ -62,10 +71,10 @@ const float VCAL[2][2][NUM_VCAL] = {
 //#define CTRL_I 0.00002f
 //#define CTRL_D 0.1f // 0.2f
 
-#define CTRL_GAIN 16.0f
-#define CTRL_P 0.42f // 2.897f // 0.737f
-#define CTRL_D 6.0f // 0.907f // 1.466f // 0.391f
-#define CTRL_FLYV -0.498f // -0.30508f
+#define CTRL_GAIN 1.0f
+#define CTRL_P 4.43f // 2.897f // 0.737f
+#define CTRL_D 22.13f // 0.907f // 1.466f // 0.391f
+#define CTRL_FLYV -0.53f // -0.30508f
 #define CTRL_I 0.0f
 
 volatile uint8_t acceled = 0;
@@ -82,6 +91,22 @@ volatile float stopped_torque[64] = { 0 };
 volatile uint8_t stopped_data_idx = 0;
 
 void ctrl_tick() {
+	int8_t uart_rx_buf_[UART_RX_BUF_SIZE] = { 0 };
+	memcpy((void*)uart_rx_buf_, (void*)uart_rx_buf, sizeof(uart_rx_buf[0]) * UART_RX_BUF_SIZE);
+	if(uart_rx_valid) {
+		for(uint8_t i = 0; i < UART_RX_BUF_SIZE; i++) {
+			int8_t v = uart_rx_buf_[i] & (~1);
+			switch(uart_rx_buf_[i] & 1) {
+				case 0:
+					imu.tilt = v;
+					break;
+				case 1:
+					imu.gyro = v;
+					break;
+			}
+		}
+	}
+
 	standstill_ccr0 = VCAL[0][0][0] / (VBUS_ADC2V * adc1_reg[1]) * (float)__HAL_TIM_GET_AUTORELOAD(&htim1);
 
 	uint8_t _stopped = _motor_stopped();
@@ -117,27 +142,23 @@ void ctrl_tick() {
 		}
 
 		// update pot PID states
-		int16_t delta = pwmin - PWMIN_HOME;
 
-		if(ctrl_ticks > 0)
-			delta_avg = (delta_avg * 7 + delta) / 8;
-		else
-			delta_avg = delta;
+		imu_avg.tilt = ((int16_t)imu_avg.tilt * 7 + (imu.tilt - TILT_HOME)) / 8;
+		imu_avg.gyro = ((int16_t)imu_avg.gyro * 7 + imu.gyro) / 8;
 
-		if((ctrl_ticks & 0) == 0) {
-			diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta_avg;
-			diff_d = 0;
-			diff_buf_full_ |= diff_buf_idx > DIFF_BUF_LEN;
-			if(diff_buf_full_) {
-				for(uint8_t i = 0; i < DIFF_BUF_LEN; i++) {
-					diff_d += diff_buf[(diff_buf_idx + i) & (DIFF_BUF_LEN - 1)] * DIFF_COEFFS[i];
-				}
-				diff_d >>= LOG_DIFF_BUF_LEN;
-			}
-		}
+//		if((ctrl_ticks & 0) == 0) {
+//			diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta_avg;
+//			diff_d = 0;
+//			diff_buf_full_ |= diff_buf_idx > DIFF_BUF_LEN;
+//			if(diff_buf_full_) {
+//				for(uint8_t i = 0; i < DIFF_BUF_LEN; i++) {
+//					diff_d += diff_buf[(diff_buf_idx + i) & (DIFF_BUF_LEN - 1)] * DIFF_COEFFS[i];
+//				}
+//				diff_d >>= LOG_DIFF_BUF_LEN;
+//			}
+//		}
 
-		diff_i += delta;
-		torque = (delta * CTRL_P + diff_i * CTRL_I + diff_d * CTRL_D + speed_avg * CTRL_FLYV) * CTRL_GAIN; // in duty-256-units of torque
+		torque = (imu_avg.tilt * CTRL_P + imu_avg.gyro * CTRL_D + speed_avg * CTRL_FLYV) * CTRL_GAIN; // in duty-256-units of torque // diff_i * CTRL_I +
 		torque = (torque + TAU0 * (torque > 0 ? 1 : -1)) * TAU2VOLT / (adc1_reg[1] * VBUS_ADC2V) * __HAL_TIM_GET_AUTORELOAD(&htim1);
 		if(_stopped) {
 			torque *= 1.2f;

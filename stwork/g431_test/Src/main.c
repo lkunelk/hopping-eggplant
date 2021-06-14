@@ -65,11 +65,13 @@ void SystemClock_Config(void);
 extern volatile uint16_t adc1_reg[8];
 extern DMA_HandleTypeDef hdma_adc1;
 unsigned char uart_buf[128] = { 0 };
-uint8_t uart_rx_buf[2] = { 0 };
+extern volatile uint8_t uart_rx_buf[2];
 extern volatile float torque, ctrl, speed_avg, next_speed;
 extern volatile uint16_t pwmin;
 // extern DMA_HandleTypeDef hdma_usart2_rx;
 extern UART_HandleTypeDef huart2;
+extern DMA_HandleTypeDef hdma_usart2_rx;
+extern volatile uint8_t uart_rx_valid;
 /* USER CODE END 0 */
 
 /**
@@ -115,7 +117,7 @@ int main(void)
 //  htim1.Instance->DIER |= TIM_DIER_COMIE;
   hadc1.Instance->CFGR |= ADC_CFGR_DMACFG;
   // NOTE: the DMA must always be able to service the ADC: if the ADC OVR's, it'll stop DMA-ing even if the overrun behavior is set to overwrite (which doesn't make sense to me...)
-  HAL_ADC_Start_DMA(&hadc1, adc1_reg, 2);
+  HAL_ADC_Start_DMA(&hadc1, adc1_reg, UART_RX_BUF_SIZE);
   hdma_adc1.Instance->CCR &= ~(DMA_CCR_HTIE | DMA_CCR_TEIE | DMA_CCR_TCIE);
 
   htim1.Instance->CR2 |= TIM_CR2_CCUS | TIM_CR2_CCPC;
@@ -146,6 +148,7 @@ int main(void)
 
   HAL_ADC_Start(&hadc1);
 
+  HAL_DMA_RegisterCallback(&hdma_usart2_rx, HAL_DMA_XFER_ALL_CB_ID, &DMA2_XferCpltCallback);
   HAL_UART_Receive_DMA(&huart2, uart_rx_buf, 2);
 
 //  HAL_TIM_GenerateEvent(&htim4, TIM_EVENTSOURCE_TRIGGER);
@@ -243,7 +246,12 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void DMA2_XferCpltCallback(DMA_HandleTypeDef *hdma) {
+	uart_rx_valid = 1;
+}
+void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
+	uart_rx_valid = 1;
+}
 /* USER CODE END 4 */
 
 /**

@@ -49,6 +49,7 @@
 /* USER CODE BEGIN PV */
 extern volatile int32_t ctrl_i, ctrl_p, ctrl_d_buf[NUM_CTRL_D_BUF];
 extern volatile uint8_t ctrl_d_idx;
+extern volatile uint8_t uart_rx_valid;
 volatile int8_t tick_blackout = 0;
 /* USER CODE END PV */
 
@@ -360,7 +361,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 }
 extern volatile uint16_t pwmin;
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM6 && pwmin_triggered > 0) {
+	if(htim->Instance == TIM6 && uart_rx_valid) {
 		ctrl_tick();
 	}
 }
