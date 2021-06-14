@@ -29,7 +29,7 @@ void motor_tick(uint8_t standstill);
 
 #define MIN_PWMIN_PULSE 500
 #define MAX_PWMIN_PULSE 2500
-#define PWMIN_LIM 1400
+#define PWMIN_LIM 1700
 
 #define BRAKE_CCER 0x444
 #define BRAKE_CCR 192
@@ -62,7 +62,7 @@ void motor_tick(uint8_t standstill);
 #define VBUS_ADC2V 0.00893f
 #define Kv 26098.1f // at 8.1V, %PWM-256 * (us / tick) (includes drag/damping friction)
 #define Ki 93028.77894443E-12 // at 8.1V, tick/us^2/%PWM
-#define TAU0 284.032f
-#define TAU2VOLT 0.0032747f
+#define TAU0 113.1133f // 284.032f
+#define TAU2VOLT 0.008538f // 0.0032747f
 
 #endif /* MOTOR_H_ */

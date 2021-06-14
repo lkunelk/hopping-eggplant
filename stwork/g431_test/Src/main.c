@@ -24,12 +24,14 @@
 #include "dma.h"
 #include "opamp.h"
 #include "tim.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "enc.h"
 #include "motor.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,6 +64,12 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 extern volatile uint16_t adc1_reg[8];
 extern DMA_HandleTypeDef hdma_adc1;
+unsigned char uart_buf[128] = { 0 };
+uint8_t uart_rx_buf[2] = { 0 };
+extern volatile float torque, ctrl, speed_avg, next_speed;
+extern volatile uint16_t pwmin;
+// extern DMA_HandleTypeDef hdma_usart2_rx;
+extern UART_HandleTypeDef huart2;
 /* USER CODE END 0 */
 
 /**
@@ -78,7 +86,6 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
 
   /* USER CODE BEGIN Init */
 
@@ -102,6 +109,7 @@ int main(void)
   MX_TIM6_Init();
   MX_ADC1_Init();
   MX_TIM7_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
 //  htim1.Instance->DIER |= TIM_DIER_COMIE;
@@ -138,6 +146,8 @@ int main(void)
 
   HAL_ADC_Start(&hadc1);
 
+  HAL_UART_Receive_DMA(&huart2, uart_rx_buf, 2);
+
 //  HAL_TIM_GenerateEvent(&htim4, TIM_EVENTSOURCE_TRIGGER);
   motor_tick(1);
   HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
@@ -165,6 +175,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  volatile uint16_t uart_buflen = sprintf(uart_buf, "%d\t%.1f\t%.1f\t%.1f\t%.1f\t%d\r\n", HAL_GetTick(), ctrl, torque, next_speed, speed_avg, pwmin);
+	  HAL_UART_Transmit_IT(&huart2, uart_buf, uart_buflen);
+	  HAL_Delay(5);
 //	  if(HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin) == GPIO_PIN_RESET && !edge) {
 //		  offset++;
 //		  edge = 1;
@@ -220,7 +233,8 @@ void SystemClock_Config(void)
   }
   /** Initializes the peripherals clocks 
   */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC12;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2|RCC_PERIPHCLK_ADC12;
+  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
   PeriphClkInit.Adc12ClockSelection = RCC_ADC12CLKSOURCE_SYSCLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {

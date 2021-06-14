@@ -22,19 +22,19 @@ Plus the diodes can take those couple of amps, for the off-time (~10us) energy
 anyways, worst thing for power is to short to ground so don't do that
  */
 
-#define PWMIN_HOME 1332
+#define PWMIN_HOME 925
 volatile uint16_t adc1_reg[8] = { 0 };
 volatile uint16_t pwmin = 0;
 volatile uint8_t abz;
 volatile uint16_t abzs[1024] = { 0 };
-volatile uint16_t abzs_idx = 0;
+volatile uint32_t abzs_idx = 0;
 volatile uint8_t last_abz = 0xFF;
 #define POT_HOME 2234
 volatile int16_t e = 0;
 volatile int32_t diff_i = 0;
 
 volatile fwd_t fwd = 0;
-volatile float speed_avg = 0;
+volatile float speed_avg = 0, next_speed = 0;
 
 volatile int32_t delta_avg = 0;
 #define DIFF_BUF_LEN 4
@@ -62,10 +62,10 @@ const float VCAL[2][2][NUM_VCAL] = {
 //#define CTRL_I 0.00002f
 //#define CTRL_D 0.1f // 0.2f
 
-#define CTRL_GAIN 1.0f
-#define CTRL_P 0.737f
-#define CTRL_D 1.466f // 0.391f
-#define CTRL_FLYV -0.30508f
+#define CTRL_GAIN 16.0f
+#define CTRL_P 0.42f // 2.897f // 0.737f
+#define CTRL_D 6.0f // 0.907f // 1.466f // 0.391f
+#define CTRL_FLYV -0.498f // -0.30508f
 #define CTRL_I 0.0f
 
 volatile uint8_t acceled = 0;
@@ -73,6 +73,7 @@ volatile uint8_t downsampler = 0;
 
 volatile float ctrl;
 volatile uint32_t ctrl_ticks;
+volatile float torque = 0.0f;
 
 volatile uint16_t standstill_ccr0 = 0;
 //volatile uint16_t stopped_counter = 0;
@@ -86,7 +87,7 @@ void ctrl_tick() {
 	uint8_t _stopped = _motor_stopped();
 	if(1) {
 		uint16_t delta_t = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
-		float next_speed = delta_t > 0 ? (TICK2RADS / (float)delta_t) : 0.0f;
+		next_speed = delta_t > 0 ? (TICK2RADS / (float)delta_t) : 0.0f;
 		switch(fwd) {
 			case FWD_T_FWD:
 				break;
@@ -136,11 +137,12 @@ void ctrl_tick() {
 		}
 
 		diff_i += delta;
-		volatile float torque = (delta * CTRL_P + diff_i * CTRL_I + diff_d * CTRL_D + speed_avg * CTRL_FLYV) * CTRL_GAIN; // in duty-256-units of torque
+		torque = (delta * CTRL_P + diff_i * CTRL_I + diff_d * CTRL_D + speed_avg * CTRL_FLYV) * CTRL_GAIN; // in duty-256-units of torque
+		torque = (torque + TAU0 * (torque > 0 ? 1 : -1)) * TAU2VOLT / (adc1_reg[1] * VBUS_ADC2V) * __HAL_TIM_GET_AUTORELOAD(&htim1);
 		if(_stopped) {
 			torque *= 1.2f;
 		}
-		ctrl = speed_avg - torque;
+		ctrl = -(speed_avg - torque);
 
 		if(abzs_idx < 256) { //  && ((downsampler & 3) == 0) // && // acceled &&
 			abzs[abzs_idx++] = diff_d; // (__HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1) << 1) | _stopped;
@@ -263,17 +265,42 @@ void motor_tick(uint8_t standstill) {
 	// +ctrl => CCW disk => CW body torque => +pot
 	// +ctrl => +speed_avg
 
-	volatile uint8_t state = mod6[
-		hall2state[abz]
-		+ (ctrl > 0 ? 0 : 3) // direction reversal
-		+ FWD_OFFSETS[fwd]
-	];
+	uint8_t state_base = hall2state[abz] + (ctrl > 0 ? 0 : 3);
+	volatile uint8_t state = mod6[state_base + FWD_OFFSETS[fwd]];
+	volatile uint8_t state_still = mod6[state_base + FWD_OFFSETS[FWD_T_STILL]];
 
-	volatile uint16_t nccr_candidate = (fabs(ctrl) + TAU0); //  * TAU2VOLT / (adc1_reg[1] * VBUS_ADC2V) * __HAL_TIM_GET_AUTORELOAD(&htim1);
-	volatile uint16_t nccr = min(MAX_CCR, nccr_candidate); // (standstill ? standstill_ccr0 : 0)); // !acceled *
+	if(last_fwd != fwd && last_fwd != FWD_T_STILL && fwd != FWD_T_STILL) {
+		// the currently loaded energization is wrong: fix it immediately
+		uint16_t ccer = (state_en[state_still] & ~TIM1_POL_MSK) | TIM1_POL; // force the correct energization for the current hall sensor
+		TIM1->CCER = ccer;
+		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM); // commutate immediately
+	}
 
+	volatile uint16_t nccr = min(MAX_CCR, fabs(ctrl)); // (standstill ? standstill_ccr0 : 0)); // !acceled *
 
 	uint16_t ccer = (state_en[state] & ~TIM1_POL_MSK) | TIM1_POL;
+
+//	nccr = min(MAX_CCR, 1000);
+//	uint16_t abzs_idx_ = (abzs_idx + 14) >> 4;
+//	if(abzs_idx_ < 1024 && !standstill) {
+//		abzs[abzs_idx_] = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
+//		abzs_idx++;
+//	}
+//	else if(abzs_idx_ >= 1024) {
+//		nccr = 0;
+//	}
+
+//	if(HAL_GetTick() > 10000) {
+//		nccr = 0;
+//		uint16_t abzs_idx_ = abzs_idx >> 4;
+//		if(abzs_idx_ < 1024 && !standstill) {
+//			abzs[abzs_idx_] = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
+//			abzs_idx++;
+//		}
+////		else if(abzs_idx_ >= 1024) {
+////			nccr = 0;
+////		}
+//	}
 
 	// <timer critical region>
 
@@ -282,9 +309,6 @@ void motor_tick(uint8_t standstill) {
 
 	// </timer critical region>
 
-	if(last_fwd != fwd && last_fwd != FWD_T_STILL && fwd != FWD_T_STILL) {
-		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM); // commutate immediately because it just ticked to the wrong direction
-	}
 	last_fwd = fwd;
 
 	if(!standstill) {
