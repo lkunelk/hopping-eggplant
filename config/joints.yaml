@@ -4,13 +4,13 @@ joint_state_controller:
 
 flywheel_controller:
   type: "effort_controllers/JointEffortController"
-  joint: arm_to_flywheel
+  joint: flywheel_joint
 
 arm_spring:
   type: "effort_controllers/JointEffortController"
-  joint: arm_spring
+  joint: spring_joint
 
 arm_controller:
   type: "effort_controllers/JointEffortController"
-  joint: arm_piston_driver
+  joint: servo_joint
   # pid: { p: 0.01, i: 0.0000001, d: 1.454 } # P param is arbitrary but small (so that angle changes don't change the force input much), D param is 0.1s/60deg -> 7.2N-m

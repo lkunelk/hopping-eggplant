@@ -7,9 +7,9 @@ const std::string
   FLY_LINK_NAME("robot::flywheel_link"),
   TRACK_LINK_NAME("tracker::tracking_dot"),
   
-  PRISM_JOINT_NAME("arm_piston_driver"),
-  SPRING_JOINT_NAME("arm_spring"),
-  FLY_JOINT_NAME("arm_to_flywheel");
+  PRISM_JOINT_NAME("servo_joint"),
+  SPRING_JOINT_NAME("spring_joint"),
+  FLY_JOINT_NAME("flywheel_joint");
 
 const float
 	ARM_LENGTH = 0.1f,

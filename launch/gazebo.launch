@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <!-- our xacro/urdf model -->
-  <arg name="model" value="$(find pendulum)/urdf/pendulum.xacro"/>
+  <arg name="model" value="$(find full_description)/urdf/full.xacro"/>
   <arg name="tracker_model" value="$(find pendulum)/urdf/tracker.xacro"/>
 
   <!-- load our urdf model (string) into global parameter called "robot_description"-->
@@ -35,14 +35,15 @@
               <!-- -J robot::base_free_theta 0.8"/> --><!--
               -R 1.8 -->
 
-  <node name="tracker_spawner"
-        pkg="gazebo_ros"
-        type="spawn_model"
-        respawn="false"
-        output="screen"
-        args="-urdf
-              -model tracker
-              -param tracker_description"/>
+<!--  <node name="tracker_spawner"-->
+<!--        pkg="gazebo_ros"-->
+<!--        type="spawn_model"-->
+<!--        respawn="false"-->
+<!--        output="screen"-->
+
+<!--        args="-urdf-->
+<!--              -model tracker-->
+<!--              -param tracker_description"/>-->
 
   <!-- load multiple values stored in .yaml file into global parameters -->
   <!-- parameters store motor controller configurations -->
@@ -73,6 +74,7 @@
         pkg="pendulum"
         respawn="true"
         type="spring_emulator"
+        output="screen"
   />
 
   <node name="bot_controller_spawner"
