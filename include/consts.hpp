@@ -2,9 +2,7 @@
 
 const std::string
   BASE_LINK_NAME("robot::base_link"),
-  ARM_LINK_NAME("robot::arm_link"),
-  ARM2_LINK_NAME("robot::arm2_link"),
-  FLY_LINK_NAME("robot::flywheel_link"),
+  FLY_LINK_NAME("robot::flywheel_v2_1"),
   TRACK_LINK_NAME("tracker::tracking_dot"),
   
   PRISM_JOINT_NAME("servo_joint"),
@@ -12,5 +10,5 @@ const std::string
   FLY_JOINT_NAME("flywheel_joint");
 
 const float
-	ARM_LENGTH = 0.1f,
-	NUM_EPS = 1E-3f;
+  ARM_LENGTH = 0.1f,
+  NUM_EPS = 1E-3f;

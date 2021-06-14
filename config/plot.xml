@@ -3,26 +3,26 @@
  <tabbed_widget name="Main Window" parent="main_window">
   <Tab containers="1" tab_name="IMU">
    <Container>
-    <DockSplitter orientation="-" sizes="0.333709;0.332582;0.333709" count="3">
+    <DockSplitter count="3" orientation="-" sizes="0.333709;0.332582;0.333709">
      <DockArea name="...">
       <plot mode="TimeSeries" style="Lines">
-       <range right="0.000000" bottom="-0.100000" left="0.000000" top="0.100000"/>
+       <range left="0.000000" top="0.001491" right="0.551640" bottom="-0.059651"/>
        <limitY/>
        <curve color="#1f77b4" name="/joint_states/spring_joint/position"/>
       </plot>
      </DockArea>
      <DockArea name="...">
       <plot mode="TimeSeries" style="Lines">
-       <range right="0.000000" bottom="-0.100000" left="0.000000" top="0.100000"/>
+       <range left="0.000000" top="794.033456" right="0.551640" bottom="100.167970"/>
        <limitY/>
-       <curve color="#1f77b4" name="/arm_spring/command/data"/>
+       <curve color="#d62728" name="/joint_states/flywheel_joint/position"/>
       </plot>
      </DockArea>
      <DockArea name="...">
       <plot mode="TimeSeries" style="Lines">
-       <range right="-0.737590" bottom="-0.100000" left="-0.841990" top="0.100000"/>
+       <range left="0.000000" top="0.153614" right="0.551640" bottom="-0.003123"/>
        <limitY/>
-       <curve color="#1f77b4" name="/base_contact/data"/>
+       <curve color="#1f77b4" name="/joint_states/flywheel_joint/effort"/>
       </plot>
      </DockArea>
     </DockSplitter>
