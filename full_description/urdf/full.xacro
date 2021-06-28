@@ -256,7 +256,7 @@
   <parent link="base_link"/>
   <child link="middle_v13_1"/>
   <axis xyz="-0.0 0.0 -1.0"/>
-  <limit effort="100" lower="0.0" upper="0.0" velocity="100"/>
+  <limit effort="100" lower="-0.0" upper="0.03" velocity="100"/>
 </joint>
 
 <joint name="spring_joint" type="prismatic">
@@ -264,7 +264,7 @@
   <parent link="middle_v13_1"/>
   <child link="Leg_0_v2_1"/>
   <axis xyz="-0.0 0.0 -1.0"/>
-  <limit effort="100" lower="0.0" upper="0.0" velocity="100"/>
+  <limit effort="100" lower="-1.0" upper="1.0" velocity="100"/>
 </joint>
 
 <joint name="Rigid12" type="fixed">
