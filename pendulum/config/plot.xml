@@ -1,28 +1,26 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root version="2.3.8">
- <tabbed_widget name="Main Window" parent="main_window">
+ <tabbed_widget parent="main_window" name="Main Window">
   <Tab containers="1" tab_name="IMU">
    <Container>
-    <DockSplitter count="3" orientation="-" sizes="0.333709;0.332582;0.333709">
+    <DockSplitter orientation="-" sizes="0.333709;0.332582;0.333709" count="3">
      <DockArea name="...">
-      <plot mode="TimeSeries" style="Lines">
-       <range left="0.000000" top="0.001491" right="0.551640" bottom="-0.059651"/>
+      <plot style="Lines" mode="TimeSeries">
+       <range top="0.100000" right="0.109200" left="0.000000" bottom="-0.100000"/>
        <limitY/>
-       <curve color="#1f77b4" name="/joint_states/spring_joint/position"/>
+       <curve color="#1f77b4" name="/base_contact/data"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot mode="TimeSeries" style="Lines">
-       <range left="0.000000" top="794.033456" right="0.551640" bottom="100.167970"/>
+      <plot style="Lines" mode="TimeSeries">
+       <range top="1.000000" right="1.000000" left="0.000000" bottom="0.000000"/>
        <limitY/>
-       <curve color="#d62728" name="/joint_states/flywheel_joint/position"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot mode="TimeSeries" style="Lines">
-       <range left="0.000000" top="0.153614" right="0.551640" bottom="-0.003123"/>
+      <plot style="Lines" mode="TimeSeries">
+       <range top="1.000000" right="1.000000" left="0.000000" bottom="0.000000"/>
        <limitY/>
-       <curve color="#1f77b4" name="/joint_states/flywheel_joint/effort"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -55,9 +53,9 @@
   <plugin ID="UDP Server"/>
   <plugin ID="WebSocket Server"/>
   <plugin ID="ZMQ Subscriber"/>
-  <plugin ID="CSV Exporter" status="idle"/>
-  <plugin ID="ROS /rosout Visualization" status="idle"/>
-  <plugin ID="ROS Topic Re-Publisher" status="idle"/>
+  <plugin status="idle" ID="CSV Exporter"/>
+  <plugin status="idle" ID="ROS /rosout Visualization"/>
+  <plugin status="idle" ID="ROS Topic Re-Publisher"/>
  </Plugins>
  <!-- - - - - - - - - - - - - - - -->
  <previouslyLoaded_Datafiles/>
