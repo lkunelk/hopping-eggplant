@@ -17,12 +17,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="0 0 0"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="Savox_SV1270TG_v4_1">
@@ -38,12 +32,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="0.003047 -0.0202 -0.179703"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/Savox_SV1270TG_v4_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="battery_v2_1">
@@ -59,12 +47,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="0.002297 0.02945 -0.203703"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/battery_v2_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="_bldc_parts.d32996c5-cb5d-48d1-b36d-40a50d399b36_v5_1">
@@ -80,12 +62,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="-0.028253 -0.00705 -0.213703"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/_bldc_parts.d32996c5-cb5d-48d1-b36d-40a50d399b36_v5_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="Turnigy_Aerodrive_SK3_-_2836_v2_1">
@@ -101,12 +77,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="-0.033253 0.0012 -0.228977"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/Turnigy_Aerodrive_SK3_-_2836_v2_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="flywheel_v2_1">
@@ -122,12 +92,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="-0.070003 0.0012 -0.228977"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/flywheel_v2_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="9657K449_COMPRESSION_SPRING_v1_1">
@@ -143,12 +107,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.019803"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/9657K449_COMPRESSION_SPRING_v1_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="middle_v13_1">
@@ -164,12 +122,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.199703"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/middle_v13_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="Leg_0_v2_1">
@@ -185,12 +137,6 @@
     </geometry>
     <material name="silver_default"/>
   </visual>
-  <collision>
-    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.134603"/>
-    <geometry>
-      <mesh filename="package://full_description/meshes/Leg_0_v2_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-  </collision>
 </link>
 
 <link name="95495K673_POLYURETHANE_RUBBER_ADHESIVE-BACK_BUMPER_v1_1">
@@ -207,9 +153,9 @@
     <material name="silver_default"/>
   </visual>
   <collision>
-    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.011803"/>
+    <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
     <geometry>
-      <mesh filename="package://full_description/meshes/95495K673_POLYURETHANE_RUBBER_ADHESIVE-BACK_BUMPER_v1_1.stl" scale="0.001 0.001 0.001"/>
+      <sphere radius=".005"/>
     </geometry>
   </collision>
 </link>
