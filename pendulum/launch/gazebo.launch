@@ -28,7 +28,7 @@
         respawn="false"
         output="screen"
         args="-z 0.2
-              -R 0.1
+              -R 0.0
               -urdf
               -model robot
               -param robot_description" />
@@ -56,24 +56,24 @@
    />
 
   <!-- Spawn controllers -->
-  <node name="pend_main_ctrl"
+  <node name="orientation_ctrl"
         pkg="pendulum"
         respawn="true"
-        type="my_controller"
+        type="orientation_ctrl"
         output="screen"
     />
 
-  <node name="prism_ctrl"
+  <node name="jump_ctrl"
       pkg="pendulum"
       respawn="true"
-      type="prism_ctrl"
+      type="jump_ctrl"
+      output="screen"
   />
 
   <node name="spring_emulator"
         pkg="pendulum"
         respawn="true"
         type="spring_emulator"
-        output="screen"
   />
 
   <node name="bot_controller_spawner"
@@ -84,12 +84,6 @@
               flywheel_controller
               arm_spring
               arm_controller" />
-
-  <!-- Plotting -->
-  <node name="plotter"
-        pkg="plotjuggler"
-        type="plotjuggler"
-        args="-n -l $(find pendulum)/config/plot.xml"/>
 </launch>
 
 
