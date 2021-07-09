@@ -34,7 +34,6 @@
           pkg="pendulum"
           respawn="true"
           type="orientation_ctrl"
-          output="screen"
     />
 
     <node name="jump_ctrl"
@@ -54,8 +53,8 @@
           pkg="controller_manager"
           type="spawner"
           respawn="true"
-          args="--namespace=/$(arg robot_name)
-        joint_state_controller
+          args="
+              joint_state_controller
               flywheel_controller
               arm_spring
               arm_controller"/>

@@ -9,8 +9,8 @@
 #include "std_msgs/Float64.h"
 #include "util.hpp"
 
-const float MAX_ANGV = 9.04f;  // rad/s, 0.1s/60deg
-const float T_STALL = 2.8f;    // N-m
+const float MAX_ANGV = 9.04f * 0.04;  // rad/s, 0.1s/60deg
+const float T_STALL = 2.8f / 0.04;    // N-m
 
 bool lastTouchSensorVal = false;
 bool fireServo = false;
@@ -29,7 +29,7 @@ void servo_emulation_cb(const sensor_msgs::JointState &msg) {
   if (fireServo) {
     commandMsg.data = T_STALL * (1.0f - fmax(0.0f, fmin(1.0f, v / MAX_ANGV)));
   } else {
-    commandMsg.data = -0.5;  // retract servo
+    commandMsg.data = -40.0;  // retract servo
   }
 
   commandPub.publish(commandMsg);
@@ -43,7 +43,7 @@ void controlUpdate() {
     if (timeExpired) {
       fireServo = false;
     }
-  } else if (lastTouchSensorVal == true) {
+  } else if (false) {  // lastTouchSensorVal == true) {
     ROS_INFO("Fire Servo!");
     fireServo = true;
     beginFireServo = ros::Time::now();
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
   commandPub = n.advertise<std_msgs::Float64>("arm_controller/command", 1000);
 
-  ros::Subscriber sub = n.subscribe("/joint_states", 1000, servo_emulation_cb);
+  ros::Subscriber sub = n.subscribe("joint_states", 1000, servo_emulation_cb);
   ros::Subscriber sub_base_contact = n.subscribe("base_contact", 1000, base_contact_cb);
 
   ros::Rate rate(1000);  // Control update rate (Hz)

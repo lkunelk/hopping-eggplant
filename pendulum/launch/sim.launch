@@ -15,19 +15,19 @@
         <arg name="headless" value="false"/>
     </include>
 
-    <include file="$(find pendulum)/launch/robot.launch" ns="bot1">
+    <include file="$(find pendulum)/launch/robot.launch">
         <arg name="robot_name" value="bot1"/>
         <arg name="model" default="$(find full_description)/urdf/full.xacro"/>
-        <arg name="z_pos" value="0.4"/>
+        <arg name="z_pos" value="0.1"/>
         <arg name="y_pos" value="-.2"/>
     </include>
 
-    <include file="$(find pendulum)/launch/robot.launch" ns="bot2">
-        <arg name="robot_name" value="bot2"/>
-        <arg name="model" default="$(find pendulum)/urdf/pendulum.xacro"/>
-        <arg name="z_pos" value="0.4"/>
-        <arg name="y_pos" value=".2"/>
-    </include>
+<!--    <include file="$(find pendulum)/launch/robot.launch" ns="bot2">-->
+<!--        <arg name="robot_name" value="bot2"/>-->
+<!--        <arg name="model" default="$(find pendulum)/urdf/pendulum.xacro"/>-->
+<!--        <arg name="z_pos" value="0.1"/>-->
+<!--        <arg name="y_pos" value=".2"/>-->
+<!--    </include>-->
 
 </launch>
 

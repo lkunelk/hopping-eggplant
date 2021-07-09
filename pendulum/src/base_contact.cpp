@@ -8,7 +8,7 @@
 #include "std_msgs/Bool.h"
 
 const std::string BASE_LINK_NAME(
-    "robot::Leg_0_v2_1::Leg_0_v2_1_fixed_joint_lump__95495K673_POLYURETHANE_RUBBER_ADHESIVE-BACK_"
+    "bot1::Leg_0_v2_1::Leg_0_v2_1_fixed_joint_lump__95495K673_POLYURETHANE_RUBBER_ADHESIVE-BACK_"
     "BUMPER_v1_1_collision");
 const std::string WORLD_LINK_NAME("ground_plane::link::collision");
 
