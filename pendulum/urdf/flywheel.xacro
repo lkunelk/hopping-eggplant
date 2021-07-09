@@ -95,7 +95,7 @@
             <child link="arm3_link"/>
             <origin rpy="0 0 0" xyz="0 0 0.0254"/>
         </joint>
-        <joint name="arm_piston_driver" type="revolute">
+        <joint name="servo_joint" type="revolute">
             <axis xyz="1 0 0"/>
             <parent link="arm3_link"/>
             <child link="arm4_link"/>
@@ -118,7 +118,7 @@
             </joint>
         </gazebo>
 
-        <joint name="arm_to_flywheel" type="continuous">
+        <joint name="flywheel_joint" type="continuous">
             <axis xyz="0 0 1"/>
             <parent link="arm4_link"/>
             <child link="flywheel_link"/>
@@ -130,7 +130,7 @@
             <actuator name="$arm_piston_motor">
                 <mechanicalReduction>1</mechanicalReduction>
             </actuator>
-            <joint name="arm_piston_driver">
+            <joint name="servo_joint">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
         </transmission>
@@ -140,7 +140,7 @@
             <actuator name="$flywheel_motor">
                 <mechanicalReduction>1</mechanicalReduction>
             </actuator>
-            <joint name="arm_to_flywheel">
+            <joint name="flywheel_joint">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
         </transmission>

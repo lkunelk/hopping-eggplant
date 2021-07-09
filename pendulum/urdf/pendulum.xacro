@@ -3,7 +3,7 @@
     <xacro:include filename="$(find pendulum)/urdf/arm.xacro"/>
     <xacro:include filename="$(find pendulum)/urdf/flywheel.xacro"/>
 
-    <xacro:property name="base_mass_kg" value="0.001"/>
+    <xacro:property name="base_mass_kg" value="0.040"/>
     <xacro:property name="base_x_m" value=".05"/>
     <xacro:property name="base_y_m" value=".05"/>
     <xacro:property name="base_z_m" value=".06"/>
@@ -58,9 +58,7 @@
 
     <!-- Add ROS plugin so we can interact with our robot -->
     <gazebo>
-        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-            <robotNamespace>/</robotNamespace>
-        </plugin>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so"/>
     </gazebo>
 </robot>
 

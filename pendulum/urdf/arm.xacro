@@ -23,7 +23,7 @@
             </inertial>
         </link>
 
-        <joint name="arm_spring" type="prismatic">
+        <joint name="spring_joint" type="prismatic">
             <parent link="base_link"/>
             <child link="arm_link"/>
             <axis xyz="0 0 1"/>
@@ -32,12 +32,12 @@
             <limit lower="-1" upper="0" effort="1000" velocity="1000"/>
         </joint>
 
-        <transmission name="$arm_spring_transmission">
+        <transmission name="$spring_joint_transmission">
             <type>transmission_interface/SimpleTransmission</type>
-            <actuator name="$arm_spring_motor">
+            <actuator name="$spring_joint_motor">
                 <mechanicalReduction>1</mechanicalReduction>
             </actuator>
-            <joint name="arm_spring">
+            <joint name="spring_joint">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
         </transmission>
