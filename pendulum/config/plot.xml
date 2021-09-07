@@ -3,24 +3,26 @@
  <tabbed_widget parent="main_window" name="Main Window">
   <Tab containers="1" tab_name="IMU">
    <Container>
-    <DockSplitter orientation="-" sizes="0.333709;0.332582;0.333709" count="3">
+    <DockSplitter count="3" sizes="0.333526;0.332947;0.333526" orientation="-">
      <DockArea name="...">
       <plot style="Lines" mode="TimeSeries">
-       <range top="0.100000" right="0.109200" left="0.000000" bottom="-0.100000"/>
+       <range top="1.025000" left="0.001900" bottom="-0.025000" right="1.751300"/>
        <limitY/>
        <curve color="#1f77b4" name="/base_contact/data"/>
       </plot>
      </DockArea>
      <DockArea name="...">
       <plot style="Lines" mode="TimeSeries">
-       <range top="1.000000" right="1.000000" left="0.000000" bottom="0.000000"/>
+       <range top="5.957500" left="0.002900" bottom="-0.657500" right="1.750900"/>
        <limitY/>
+       <curve color="#1f77b4" name="/arm_controller/command/data"/>
       </plot>
      </DockArea>
      <DockArea name="...">
       <plot style="Lines" mode="TimeSeries">
-       <range top="1.000000" right="1.000000" left="0.000000" bottom="0.000000"/>
+       <range top="0.206727" left="0.000000" bottom="-0.075807" right="1.751300"/>
        <limitY/>
+       <curve color="#1f77b4" name="/gazebo/link_states/pose.1/position/z"/>
       </plot>
      </DockArea>
     </DockSplitter>

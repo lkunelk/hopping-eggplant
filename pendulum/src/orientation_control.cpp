@@ -25,10 +25,19 @@ const float noLoadSpeed = 1000.0;  // rad/s
 // control related
 ros::Publisher flywheelCommandPub;
 std_msgs::Float64 commandMsg;
-float robotAngPos = 0;
-float robotAngVel = 0;
-float flywheelVel = 0;
+volatile float robotAngPos = 1.0;
+volatile float robotAngVel = 1.0;
+volatile float flywheelVel = 1.0;
 
+// orientation - imu quaternion
+// orientaiton speed - imu ang vel
+// flywheel speed - joint states
+// steps to calculate how much to yaw:
+// get z unit vector (points in direction of rod)
+// calculate ideal x vector direction
+// calculate angle between ideal x and current x
+// rotate
+// minimal quaternions
 void linkStateCallback(const gazebo_msgs::LinkStates &msg) {
   geometry_msgs::Quaternion q = msg.pose[idxOf(msg.name, BASE_LINK_NAME)].orientation;
   geometry_msgs::Vector3 a = msg.twist[idxOf(msg.name, BASE_LINK_NAME)].angular;
@@ -46,7 +55,7 @@ void linkStateCallback(const gazebo_msgs::LinkStates &msg) {
 
 void controlUpdate() {
   // compute and publish control command
-  ROS_INFO("Robot angle: %f %f", robotAngPos, robotAngVel);
+  ROS_INFO("Robot angle: %f %f", robotAngPos, robotAngPos);
   float command = (-P * robotAngPos) + (-D * robotAngVel) + (+FLY_P * flywheelVel);
   float sign = (command > 0) - (command < 0);
   float maxTorque = fmax(0.0f, (1 - std::abs(flywheelVel) / noLoadSpeed) * stallTorque);

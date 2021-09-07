@@ -1,6 +1,8 @@
 <?xml version="1.0" ?>
 <robot name="full" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+<xacro:include filename="$(find pendulum)/urdf/imu.xacro"/>
+
 <xacro:include filename="$(find full_description)/urdf/materials.xacro" />
 <xacro:include filename="$(find full_description)/urdf/full.trans" />
 <xacro:include filename="$(find full_description)/urdf/full.gazebo" />
@@ -14,6 +16,21 @@
     <origin rpy="0 0 0" xyz="0 0 0"/>
     <geometry>
       <mesh filename="package://full_description/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="yaw_flywheel">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <mass value="0.100"/>
+    <inertia ixx="1e-03" ixy="-0.0" ixz="-0.0" iyy="3.5e-05" iyz="-0.0" izz="3.5e-05"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <geometry>
+      <box size=".05 .05 .01"/>
     </geometry>
     <material name="silver_default"/>
   </visual>
@@ -82,8 +99,8 @@
 <link name="flywheel_v2_1">
   <inertial>
     <origin rpy="0 0 0" xyz="0.0014986943552602328 7.592667813915988e-15 -2.8213514774444448e-08"/>
-    <mass value="0.03660763962304266"/>
-    <inertia ixx="6.9e-05" ixy="-0.0" ixz="-0.0" iyy="3.5e-05" iyz="-0.0" izz="3.5e-05"/>
+    <mass value="0.100"/>
+    <inertia ixx="1e-03" ixy="-0.0" ixz="-0.0" iyy="3.5e-05" iyz="-0.0" izz="3.5e-05"/>
   </inertial>
   <visual>
     <origin rpy="0 0 0" xyz="-0.070003 0.0012 -0.228977"/>
@@ -182,6 +199,13 @@
   <origin rpy="0 0 0" xyz="0.005 -0.00825 0.015274"/>
   <parent link="_bldc_parts.d32996c5-cb5d-48d1-b36d-40a50d399b36_v5_1"/>
   <child link="Turnigy_Aerodrive_SK3_-_2836_v2_1"/>
+</joint>
+
+<joint name="yaw_flywheel_joint" type="continuous">
+  <origin rpy="0 0 0" xyz="0.0 0.0 0.25"/>
+  <parent link="base_link"/>
+  <child link="yaw_flywheel"/>
+  <axis xyz="0.0 0.0 1.0"/>
 </joint>
 
 <joint name="flywheel_joint" type="continuous">

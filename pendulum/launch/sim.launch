@@ -16,7 +16,7 @@
     </include>
 
     <include file="$(find pendulum)/launch/robot.launch">
-        <arg name="robot_name" value="bot1"/>
+        <arg name="robot_name" value="robot"/>
         <arg name="model" default="$(find full_description)/urdf/full.xacro"/>
         <arg name="z_pos" value="0.1"/>
         <arg name="y_pos" value="-.2"/>

@@ -27,6 +27,9 @@ target_link_libraries(jump_ctrl ${catkin_LIBRARIES} util)
 add_executable(orientation_ctrl src/orientation_control.cpp)
 target_link_libraries(orientation_ctrl ${catkin_LIBRARIES} util)
 
+add_executable(yaw_ctrl src/yaw_controll.cpp)
+target_link_libraries(yaw_ctrl ${catkin_LIBRARIES})
+
 add_executable(base_contact src/base_contact.cpp)
 target_link_libraries(base_contact ${GAZEBO_LIBRARIES} ${catkin_LIBRARIES} pthread util)
 

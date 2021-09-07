@@ -16,7 +16,7 @@
           output="screen"
           args="-z $(arg z_pos)
               -y $(arg y_pos)
-              -R 0.0
+              -R 0.1
               -urdf
               -model $(arg robot_name)
               -param robot_description"/>
@@ -34,13 +34,13 @@
           pkg="pendulum"
           respawn="true"
           type="orientation_ctrl"
+          output="screen"
     />
 
     <node name="jump_ctrl"
           pkg="pendulum"
           respawn="true"
           type="jump_ctrl"
-          output="screen"
     />
 
     <node name="spring_emulator"
@@ -56,6 +56,7 @@
           args="
               joint_state_controller
               flywheel_controller
+              yaw_flywheel_controller
               arm_spring
               arm_controller"/>
 </launch>
