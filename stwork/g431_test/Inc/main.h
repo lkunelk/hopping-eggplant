@@ -85,6 +85,7 @@ void Error_Handler(void);
 #define Z_Pin GPIO_PIN_8
 #define Z_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
+#define UART_RX_INACTIVITY_TIMEOUT 1000
 void DMA2_XferCpltCallback(DMA_HandleTypeDef *hdma);
 /* USER CODE END Private defines */
 

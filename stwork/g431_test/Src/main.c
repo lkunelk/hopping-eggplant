@@ -65,13 +65,16 @@ void SystemClock_Config(void);
 extern volatile uint16_t adc1_reg[8];
 extern DMA_HandleTypeDef hdma_adc1;
 unsigned char uart_buf[128] = { 0 };
-extern volatile uint8_t uart_rx_buf[2];
+extern volatile uint8_t uart_rx_buf[UART_RX_BUF_SIZE];
 extern volatile float torque, ctrl, speed_avg, next_speed;
 extern volatile uint16_t pwmin;
 // extern DMA_HandleTypeDef hdma_usart2_rx;
 extern UART_HandleTypeDef huart2;
 extern DMA_HandleTypeDef hdma_usart2_rx;
 extern volatile uint8_t uart_rx_valid;
+volatile uint32_t last_uart = 0;
+
+extern imu_t imu, imu_avg;
 /* USER CODE END 0 */
 
 /**
@@ -117,7 +120,7 @@ int main(void)
 //  htim1.Instance->DIER |= TIM_DIER_COMIE;
   hadc1.Instance->CFGR |= ADC_CFGR_DMACFG;
   // NOTE: the DMA must always be able to service the ADC: if the ADC OVR's, it'll stop DMA-ing even if the overrun behavior is set to overwrite (which doesn't make sense to me...)
-  HAL_ADC_Start_DMA(&hadc1, adc1_reg, UART_RX_BUF_SIZE);
+  HAL_ADC_Start_DMA(&hadc1, adc1_reg, 2);
   hdma_adc1.Instance->CCR &= ~(DMA_CCR_HTIE | DMA_CCR_TEIE | DMA_CCR_TCIE);
 
   htim1.Instance->CR2 |= TIM_CR2_CCUS | TIM_CR2_CCPC;
@@ -149,7 +152,7 @@ int main(void)
   HAL_ADC_Start(&hadc1);
 
   HAL_DMA_RegisterCallback(&hdma_usart2_rx, HAL_DMA_XFER_ALL_CB_ID, &DMA2_XferCpltCallback);
-  HAL_UART_Receive_DMA(&huart2, uart_rx_buf, 2);
+  HAL_UART_Receive_DMA(&huart2, uart_rx_buf, UART_RX_BUF_SIZE);
 
 //  HAL_TIM_GenerateEvent(&htim4, TIM_EVENTSOURCE_TRIGGER);
   motor_tick(1);
@@ -178,9 +181,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  volatile uint16_t uart_buflen = sprintf(uart_buf, "%d\t%.1f\t%.1f\t%.1f\t%.1f\t%d\r\n", HAL_GetTick(), ctrl, torque, next_speed, speed_avg, pwmin);
-	  HAL_UART_Transmit_IT(&huart2, uart_buf, uart_buflen);
-	  HAL_Delay(5);
+	  uint32_t tick = HAL_GetTick();
+	  if(last_uart + UART_RX_INACTIVITY_TIMEOUT < tick) {
+		  uart_rx_valid = 0;
+	  }
+	  if(1 || tick < 13000) { // HAL_GetTick() > 10000 &&
+		  volatile uint16_t uart_buflen = sprintf(uart_buf, "%d\t%.1f\t%.1f\t%.1f\t%d\t%d\r\n", HAL_GetTick(), ctrl, torque, speed_avg, imu_avg.tilt, imu_avg.gyro); // "%d\t%.1f\r\n", HAL_GetTick(), speed_avg);
+		  HAL_UART_Transmit_IT(&huart2, uart_buf, uart_buflen);
+		  HAL_Delay(20);
+	  }
+
 //	  if(HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin) == GPIO_PIN_RESET && !edge) {
 //		  offset++;
 //		  edge = 1;
@@ -251,6 +261,7 @@ void DMA2_XferCpltCallback(DMA_HandleTypeDef *hdma) {
 }
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
 	uart_rx_valid = 1;
+	last_uart = HAL_GetTick();
 }
 /* USER CODE END 4 */
 

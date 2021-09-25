@@ -361,7 +361,7 @@ void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
 }
 extern volatile uint16_t pwmin;
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM6 && uart_rx_valid) {
+	if(htim->Instance == TIM6) { // && uart_rx_valid) {
 		ctrl_tick();
 	}
 }

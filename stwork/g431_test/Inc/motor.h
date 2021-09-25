@@ -14,6 +14,11 @@ typedef enum {
 	FWD_T_BKWD = 0, FWD_T_FWD, FWD_T_STILL, NUM_FWD_TS
 } fwd_t;
 
+typedef struct imu_t {
+	int16_t tilt;
+	int16_t gyro;
+} imu_t;
+
 inline uint8_t _motor_stopped(void) {
 	return __HAL_TIM_GET_COUNTER(&htim4) == 0 && __HAL_TIM_GET_FLAG(&htim4, TIM_FLAG_TRIGGER) == RESET;
 }
@@ -46,7 +51,7 @@ void motor_tick(uint8_t standstill);
 #define HALL_TICK_BLACKOUT 3 // number of TIM6 cycles to blackout on timer-based ticks
 #define PCCR 220
 
-#define UART_RX_BUF_SIZE 2
+#define UART_RX_BUF_SIZE 4
 // Note about PCC:
 // high-side PWM just to recharge bootstrap cap; also sets absolute max CCR
 // @2 downsampling, 55ccr = 260us off-time -> given 10-ohm ESR cap, 63us time constant, we're fine (2%)
@@ -64,7 +69,7 @@ void motor_tick(uint8_t standstill);
 #define VBUS_ADC2V 0.00893f
 #define Kv 26098.1f // at 8.1V, %PWM-256 * (us / tick) (includes drag/damping friction)
 #define Ki 93028.77894443E-12 // at 8.1V, tick/us^2/%PWM
-#define TAU0 113.1133f // 284.032f
+#define TAU0 20.0f // 113.1133f // 284.032f
 #define TAU2VOLT 0.008538f // 0.0032747f
 
 #endif /* MOTOR_H_ */

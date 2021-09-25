@@ -12,6 +12,7 @@
 #include "adc.h"
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 /*
 Considered the inductor energy dumping to decide about deadtime + complimentary
@@ -23,21 +24,17 @@ anyways, worst thing for power is to short to ground so don't do that
  */
 
 #define PWMIN_HOME 925
-#define TILT_HOME 78
+#define TILT_HOME 115
 volatile uint16_t adc1_reg[8] = { 0 };
 volatile uint8_t uart_rx_buf[UART_RX_BUF_SIZE] = { 0 };
 volatile uint8_t uart_rx_valid = 0;
-typedef struct imu_t {
-	int8_t tilt;
-	int8_t gyro;
-} imu_t;
 volatile imu_t imu = { 0 };
 volatile imu_t imu_avg = { 0 };
 volatile uint16_t pwmin = 0;
 volatile uint8_t abz;
-volatile uint16_t abzs[1024] = { 0 };
+volatile uint16_t abzs[16] = { 0 };
 volatile uint32_t abzs_idx = 0;
-volatile uint8_t last_abz = 0xFF;
+volatile uint8_t last_abz = 0;
 #define POT_HOME 2234
 volatile int16_t e = 0;
 volatile int32_t diff_i = 0;
@@ -73,7 +70,7 @@ const float VCAL[2][2][NUM_VCAL] = {
 
 #define CTRL_GAIN 1.0f
 #define CTRL_P 4.43f // 2.897f // 0.737f
-#define CTRL_D 22.13f // 0.907f // 1.466f // 0.391f
+#define CTRL_D 22.13f // 22.13f // 0.907f // 1.466f // 0.391f
 #define CTRL_FLYV -0.53f // -0.30508f
 #define CTRL_I 0.0f
 
@@ -95,101 +92,121 @@ void ctrl_tick() {
 	memcpy((void*)uart_rx_buf_, (void*)uart_rx_buf, sizeof(uart_rx_buf[0]) * UART_RX_BUF_SIZE);
 	if(uart_rx_valid) {
 		for(uint8_t i = 0; i < UART_RX_BUF_SIZE; i++) {
-			int8_t v = uart_rx_buf_[i] & (~1);
-			switch(uart_rx_buf_[i] & 1) {
-				case 0:
-					imu.tilt = v;
+			uint16_t v = (uart_rx_buf_[i] >> 2) & 0x3F;
+			switch(uart_rx_buf_[i] & 0b11) {
+				case 0: // GYRO LSB
+					imu.gyro = (imu.gyro & (~0x3F)) | v;
 					break;
-				case 1:
-					imu.gyro = v;
+				case 1: { // GYRO MSB
+					volatile int16_t gyro = ((imu.gyro & (~(0x3F << 6))) | (v << 6)) << 4;
+					imu.gyro = gyro >> 4;
 					break;
-			}
-		}
-	}
-
-	standstill_ccr0 = VCAL[0][0][0] / (VBUS_ADC2V * adc1_reg[1]) * (float)__HAL_TIM_GET_AUTORELOAD(&htim1);
-
-	uint8_t _stopped = _motor_stopped();
-	if(1) {
-		uint16_t delta_t = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
-		next_speed = delta_t > 0 ? (TICK2RADS / (float)delta_t) : 0.0f;
-		switch(fwd) {
-			case FWD_T_FWD:
-				break;
-			case FWD_T_BKWD:
-				next_speed *= -1.0f;
-				break;
-			case FWD_T_STILL:
-				next_speed = 0.0f;
-				break;
-		}
-
-		speed_avg = _stopped ? 0 : (speed_avg * 15 + next_speed) / 16; // filter speed a little with moving avg
-
-		float bemf_ccr = 0.0f;
-		if(adc1_reg[1] > 0) {
-			float bemf = 0.0f;
-			if(fwd != FWD_T_STILL) {
-				uint8_t fwd_ = fwd == FWD_T_FWD ? 1 : 0; // also stash to avoid preemption
-				for(uint8_t i = 1; i < NUM_VCAL; i++) {
-					if(speed_avg < VCAL[fwd_][1][i]) {
-						bemf = VCAL[fwd_][0][i] + (speed_avg - VCAL[fwd_][1][i - 1]) / (VCAL[fwd_][1][i] - VCAL[fwd_][1][i - 1]) * (VCAL[fwd_][0][i] - VCAL[fwd_][0][i - 1]);
-						break;
-					}
+				}
+				case 2: // TILT LSB
+					imu.tilt = (imu.tilt & (~0x3F)) | v;
+					break;
+				case 3: { // TILT MSB
+					uint16_t tilt = (imu.tilt & (~(0x3F << 6))) | (v << 6);
+					// tilt = (tilt << 4) >> 4; // propagate sign bit
+					imu.tilt = tilt;
+					break;
 				}
 			}
-			bemf_ccr = bemf / (VBUS_ADC2V * adc1_reg[1]) * (float)__HAL_TIM_GET_AUTORELOAD(&htim1);
 		}
 
-		// update pot PID states
+		standstill_ccr0 = VCAL[0][0][0] / (VBUS_ADC2V * adc1_reg[1]) * (float)__HAL_TIM_GET_AUTORELOAD(&htim1);
 
-		imu_avg.tilt = ((int16_t)imu_avg.tilt * 7 + (imu.tilt - TILT_HOME)) / 8;
-		imu_avg.gyro = ((int16_t)imu_avg.gyro * 7 + imu.gyro) / 8;
+		uint8_t _stopped = _motor_stopped();
+		if(1) {
+			uint16_t delta_t = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
+			next_speed = delta_t > 0 ? (TICK2RADS / (float)delta_t) : 0.0f;
+			switch(fwd) {
+				case FWD_T_FWD:
+					break;
+				case FWD_T_BKWD:
+					next_speed *= -1.0f;
+					break;
+				case FWD_T_STILL:
+					next_speed = 0.0f;
+					break;
+			}
 
-//		if((ctrl_ticks & 0) == 0) {
-//			diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta_avg;
-//			diff_d = 0;
-//			diff_buf_full_ |= diff_buf_idx > DIFF_BUF_LEN;
-//			if(diff_buf_full_) {
-//				for(uint8_t i = 0; i < DIFF_BUF_LEN; i++) {
-//					diff_d += diff_buf[(diff_buf_idx + i) & (DIFF_BUF_LEN - 1)] * DIFF_COEFFS[i];
-//				}
-//				diff_d >>= LOG_DIFF_BUF_LEN;
-//			}
-//		}
+			speed_avg = _stopped ? 0 : (speed_avg * 15 + next_speed) / 16; // filter speed a little with moving avg
 
-		torque = (imu_avg.tilt * CTRL_P + imu_avg.gyro * CTRL_D + speed_avg * CTRL_FLYV) * CTRL_GAIN; // in duty-256-units of torque // diff_i * CTRL_I +
-		torque = (torque + TAU0 * (torque > 0 ? 1 : -1)) * TAU2VOLT / (adc1_reg[1] * VBUS_ADC2V) * __HAL_TIM_GET_AUTORELOAD(&htim1);
+			float bemf_ccr = 0.0f;
+			if(adc1_reg[1] > 0) {
+				float bemf = 0.0f;
+				if(fwd != FWD_T_STILL) {
+					uint8_t fwd_ = fwd == FWD_T_FWD ? 1 : 0; // also stash to avoid preemption
+					for(uint8_t i = 1; i < NUM_VCAL; i++) {
+						if(speed_avg < VCAL[fwd_][1][i]) {
+							bemf = VCAL[fwd_][0][i] + (speed_avg - VCAL[fwd_][1][i - 1]) / (VCAL[fwd_][1][i] - VCAL[fwd_][1][i - 1]) * (VCAL[fwd_][0][i] - VCAL[fwd_][0][i - 1]);
+							break;
+						}
+					}
+				}
+				bemf_ccr = bemf / (VBUS_ADC2V * adc1_reg[1]) * (float)__HAL_TIM_GET_AUTORELOAD(&htim1);
+			}
+
+			// update pot PID states
+
+			imu_avg.tilt = ((int16_t)imu_avg.tilt * 3 + (imu.tilt - TILT_HOME)) / 4;
+			imu_avg.gyro = ((int16_t)imu_avg.gyro * 3 + imu.gyro) / 4;
+
+	//		if((ctrl_ticks & 0) == 0) {
+	//			diff_buf[(diff_buf_idx++) & (DIFF_BUF_LEN - 1)] = delta_avg;
+	//			diff_d = 0;
+	//			diff_buf_full_ |= diff_buf_idx > DIFF_BUF_LEN;
+	//			if(diff_buf_full_) {
+	//				for(uint8_t i = 0; i < DIFF_BUF_LEN; i++) {
+	//					diff_d += diff_buf[(diff_buf_idx + i) & (DIFF_BUF_LEN - 1)] * DIFF_COEFFS[i];
+	//				}
+	//				diff_d >>= LOG_DIFF_BUF_LEN;
+	//			}
+	//		}
+
+			torque = (imu_avg.tilt * CTRL_P + imu_avg.gyro * CTRL_D + speed_avg * CTRL_FLYV) * CTRL_GAIN; // in duty-256-units of torque // diff_i * CTRL_I +
+			torque = (torque + TAU0 * (torque > 0 ? 1 : -1)) * TAU2VOLT / (adc1_reg[1] * VBUS_ADC2V) * __HAL_TIM_GET_AUTORELOAD(&htim1);
+			if(_stopped) {
+				torque *= 1.2f;
+			}
+
+			if(0) {
+				if(imu.tilt > 0 && imu.tilt < 0xFF)
+					ctrl = -(speed_avg - torque);
+				else
+					ctrl = 0;
+			}
+
+	//		if(abzs_idx < 256) { //  && ((downsampler & 3) == 0) // && // acceled &&
+	//			abzs[abzs_idx++] = diff_d; // (__HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1) << 1) | _stopped;
+	//		}
+
+			// !_stopped && //  && state_diff > 0
+
+			downsampler++;
+			ctrl_ticks++;
+
+			if(_stopped && stopped_data_idx >= 64) {
+				stopped_data_idx = 0;
+			}
+			else if(stopped_data_idx < 64) {
+				stopped_ctrl[stopped_data_idx] = ctrl;
+				stopped_torque[stopped_data_idx] = torque;
+				stopped_data_idx++;
+			}
+			else {
+				stopped_data_idx = 64;
+			}
+		}
+
 		if(_stopped) {
-			torque *= 1.2f;
-		}
-		ctrl = -(speed_avg - torque);
-
-		if(abzs_idx < 256) { //  && ((downsampler & 3) == 0) // && // acceled &&
-			abzs[abzs_idx++] = diff_d; // (__HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1) << 1) | _stopped;
-		}
-
-		// !_stopped && //  && state_diff > 0
-
-		downsampler++;
-		ctrl_ticks++;
-
-		if(_stopped && stopped_data_idx >= 64) {
-			stopped_data_idx = 0;
-		}
-		else if(stopped_data_idx < 64) {
-			stopped_ctrl[stopped_data_idx] = ctrl;
-			stopped_torque[stopped_data_idx] = torque;
-			stopped_data_idx++;
-		}
-		else {
-			stopped_data_idx = 64;
+			motor_tick(1);
+			HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
 		}
 	}
-
-	if(_stopped) {
-		motor_tick(1);
-		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
+	else {
+		ctrl = 0;
 	}
 }
 
@@ -223,25 +240,23 @@ volatile uint32_t* const state_ccr_[6][3] = {
 #define HALL2STATE_INVALID 0 // use legal values for invalid, juuuust in case
 // 1 0 2 2 3 1
 // 2 0 4 5 7 3
+const uint8_t hall2state[8] = {
+	4, HALL2STATE_INVALID, 3, 2, 5, 0, HALL2STATE_INVALID, 1
+};
 //const uint8_t hall2state[8] = {
-//	1, HALL2STATE_INVALID, 0, 5, 2, 3, HALL2STATE_INVALID, 4
+//	1, HALL2STATE_INVALID, 2, 3, 0, 5, HALL2STATE_INVALID, 4
 //};
 
 // 5 7 3 2 0 4
 // 3 2 6 4 5 1
 // 5 7 3 2 0 4
-const uint8_t hall2state[8] = {
-	4, HALL2STATE_INVALID, 3, 2, 5, HALL2STATE_INVALID, 2, 1
-};
+
+//const uint8_t hall2state[8] = {
+//	4, HALL2STATE_INVALID, 3, 2, 5, HALL2STATE_INVALID, 2, 1
+//};
 
 volatile uint32_t* const ccrs[3] = { &(TIM1->CCR1), &(TIM1->CCR2), &(TIM1->CCR3) };
 volatile uint32_t* const state_ccr[6][3] = {
-//	{ &(TIM1->CCR2), &(TIM1->CCR3), &(TIM1->CCR1) },
-//	{ &(TIM1->CCR2), &(TIM1->CCR1), &(TIM1->CCR3) },
-//	{ &(TIM1->CCR3), &(TIM1->CCR1), &(TIM1->CCR2) },
-//	{ &(TIM1->CCR3), &(TIM1->CCR2), &(TIM1->CCR1) },
-//	{ &(TIM1->CCR1), &(TIM1->CCR2), &(TIM1->CCR3) },
-//	{ &(TIM1->CCR1), &(TIM1->CCR3), &(TIM1->CCR2) },
 	{ &(TIM1->CCR2), &(TIM1->CCR3), &(TIM1->CCR1) },
 	{ &(TIM1->CCR2), &(TIM1->CCR1), &(TIM1->CCR3) },
 	{ &(TIM1->CCR3), &(TIM1->CCR1), &(TIM1->CCR2) },
@@ -270,6 +285,11 @@ void motor_tick(uint8_t standstill) {
 	ticks++;
 	abz = enc();
 
+//	if(abz != last_abz) {
+//		abzs[(abzs_idx++) & 15] = abz;
+//	}
+//	last_abz = abz;
+
 	int8_t state_diff = (int8_t)hall2state[abz] - (int8_t)hall2state[last_abz];
 	if(standstill) {
 		fwd = FWD_T_STILL;
@@ -286,9 +306,29 @@ void motor_tick(uint8_t standstill) {
 	// +ctrl => CCW disk => CW body torque => +pot
 	// +ctrl => +speed_avg
 
+	if(1) {
+		ctrl = 300;
+		if(HAL_GetTick() > 3000) {
+			ctrl = -300;
+	//		uint16_t abzs_idx_ = abzs_idx >> 4;
+	//		if(abzs_idx_ < 1024 && !standstill) {
+	//			abzs[abzs_idx_] = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
+	//			abzs_idx++;
+	//		}
+	////		else if(abzs_idx_ >= 1024) {
+	////			nccr = 0;
+	////		}
+		}
+		if(HAL_GetTick() > 6000 || (HAL_GetTick() > 3000 && fabs(speed_avg) > 400)) {
+			ctrl = 0;
+		}
+	}
+
+//	ctrl = 300;
+
 	uint8_t state_base = hall2state[abz] + (ctrl > 0 ? 0 : 3);
-	volatile uint8_t state = mod6[state_base + FWD_OFFSETS[fwd]];
-	volatile uint8_t state_still = mod6[state_base + FWD_OFFSETS[FWD_T_STILL]];
+	volatile uint8_t state = (state_base + FWD_OFFSETS[fwd]) % 6;
+	volatile uint8_t state_still = (state_base + FWD_OFFSETS[FWD_T_STILL]) % 6;
 
 	if(last_fwd != fwd && last_fwd != FWD_T_STILL && fwd != FWD_T_STILL) {
 		// the currently loaded energization is wrong: fix it immediately
@@ -311,21 +351,12 @@ void motor_tick(uint8_t standstill) {
 //		nccr = 0;
 //	}
 
-//	if(HAL_GetTick() > 10000) {
-//		nccr = 0;
-//		uint16_t abzs_idx_ = abzs_idx >> 4;
-//		if(abzs_idx_ < 1024 && !standstill) {
-//			abzs[abzs_idx_] = __HAL_TIM_GET_COMPARE(&htim4, TIM_CHANNEL_1);
-//			abzs_idx++;
-//		}
-////		else if(abzs_idx_ >= 1024) {
-////			nccr = 0;
-////		}
-//	}
-
 	// <timer critical region>
 
-	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = nccr;
+	*state_ccr[state_still][0] = nccr;
+	*state_ccr[state_still][2] = nccr;
+	*state_ccr[state_still][1] = __HAL_TIM_GET_AUTORELOAD(&htim1);
+//	htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = nccr;
 	TIM1->CCER = ccer;
 
 	// </timer critical region>
