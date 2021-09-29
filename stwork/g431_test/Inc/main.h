@@ -43,7 +43,7 @@ extern "C" {
 
 /* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
-
+#define CTRL0 220
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
@@ -84,6 +84,7 @@ void Error_Handler(void);
 #define B_GPIO_Port GPIOB
 #define Z_Pin GPIO_PIN_8
 #define Z_GPIO_Port GPIOB
+#define Z_EXTI_IRQn EXTI9_5_IRQn
 /* USER CODE BEGIN Private defines */
 #define UART_RX_INACTIVITY_TIMEOUT 1000
 void DMA2_XferCpltCallback(DMA_HandleTypeDef *hdma);

@@ -31,6 +31,7 @@
 /* USER CODE BEGIN Includes */
 #include "enc.h"
 #include "motor.h"
+#include "math_util.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
@@ -66,7 +67,8 @@ extern volatile uint16_t adc1_reg[8];
 extern DMA_HandleTypeDef hdma_adc1;
 unsigned char uart_buf[128] = { 0 };
 extern volatile uint8_t uart_rx_buf[UART_RX_BUF_SIZE];
-extern volatile float torque, ctrl, speed_avg, next_speed;
+extern volatile float torque_volts, bemf_volts, speed_avg, theta_offset;
+extern volatile int16_t ctrl;
 extern volatile uint16_t pwmin;
 // extern DMA_HandleTypeDef hdma_usart2_rx;
 extern UART_HandleTypeDef huart2;
@@ -74,7 +76,15 @@ extern DMA_HandleTypeDef hdma_usart2_rx;
 extern volatile uint8_t uart_rx_valid;
 volatile uint32_t last_uart = 0;
 
+extern volatile uint32_t enc_revs;
+
 extern imu_t imu, imu_avg;
+extern volatile uint8_t z_triggered;
+int16_t gyro_log[512][2] = { 0 };
+uint16_t gyro_log_idx = 0;
+volatile uint8_t ctrl_on = 0;
+//int16_t enc_log[256][2] = { 0 };
+//uint8_t enc_log_idx = 0;
 /* USER CODE END 0 */
 
 /**
@@ -123,9 +133,8 @@ int main(void)
   HAL_ADC_Start_DMA(&hadc1, adc1_reg, 2);
   hdma_adc1.Instance->CCR &= ~(DMA_CCR_HTIE | DMA_CCR_TEIE | DMA_CCR_TCIE);
 
-  htim1.Instance->CR2 |= TIM_CR2_CCUS | TIM_CR2_CCPC;
+//  htim1.Instance->CR2 |= TIM_CR2_CCUS | TIM_CR2_CCPC;
   HAL_TIM_Base_Start(&htim1);
-
 
 //  extern uint16_t state_en[6];
 //  htim1.Instance->CCR1 = htim1.Instance->CCR2 = htim1.Instance->CCR3 = 600;
@@ -135,14 +144,17 @@ int main(void)
 //  HAL_Delay(600);
 
 
-  htim4.Instance->DIER |= TIM_DIER_CC2IE;
-  htim4.Instance->CCER |= TIM_CCER_CC1E; // | TIM_CCER_CC2E;
-  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 1);
-  htim4.Instance->SMCR &= ~TIM_SMCR_SMS;
-  htim4.Instance->SMCR |= TIM_SLAVEMODE_COMBINED_RESETTRIGGER; // make it reset and trigger so that those other instances hit too
+  if(0) {
+	  htim4.Instance->DIER |= TIM_DIER_CC2IE;
+	  htim4.Instance->CCER |= TIM_CCER_CC1E; // | TIM_CCER_CC2E;
+	  __HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 1);
+	  htim4.Instance->SMCR &= ~TIM_SMCR_SMS;
+	  htim4.Instance->SMCR |= TIM_SLAVEMODE_COMBINED_RESETTRIGGER; // make it reset and trigger so that those other instances hit too
+  }
 //  htim4.Instance->CCMR1 &= ~TIM_CCMR1_OC2M_Msk;
 //  htim4.Instance->CCMR1 |= 0b0001 << TIM_CCMR1_OC2M_Pos;
   HAL_TIM_Base_Start(&htim4);
+//  HAL_TIM_Base_Start_IT(&htim8);
 //  htim1.Instance->DIER |= TIM_DIER_COMIE;
 
   HAL_TIM_Base_Start_IT(&htim6);
@@ -154,9 +166,28 @@ int main(void)
   HAL_DMA_RegisterCallback(&hdma_usart2_rx, HAL_DMA_XFER_ALL_CB_ID, &DMA2_XferCpltCallback);
   HAL_UART_Receive_DMA(&huart2, uart_rx_buf, UART_RX_BUF_SIZE);
 
+  for(uint16_t theta = 0x1FF, i = 0; !z_triggered; theta = (theta + 8) & 0x1FF, i++) { //
+	  motor_to(theta, 50);
+	  HAL_Delay(1);
+
+//	  if((i & 0x7) == 0) {
+//		  uint8_t idx = (enc_log_idx++) & 0xFF;
+//		  enc_log[idx][0] = theta;
+//		  enc_log[idx][1] = __HAL_TIM_GET_COUNTER(&htim4);
+//	  }
+  }
+
+  if(0) {
+	  for(uint32_t iter = 0;; iter++) {
+		  int16_t enc_raw = -(((int16_t)__HAL_TIM_GET_COUNTER(&htim4)) - MECH_OFFSET);
+		  uint16_t enc_theta = (modpos(enc_raw, ENC_MOD_BASE) * THETA_360DEG) / ENC_MOD_BASE;
+		  motor_to((enc_theta + THETA_270DEG) & 0x1FF, 50);
+	  }
+  }
+
 //  HAL_TIM_GenerateEvent(&htim4, TIM_EVENTSOURCE_TRIGGER);
-  motor_tick(1);
-  HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
+//  motor_tick(1);
+//  HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM);
 
 //  __HAL_TIM_SET_COUNTER(&htim4, HALL_INIT);
 //    motor_tick();
@@ -176,6 +207,7 @@ int main(void)
 ////	  HAL_Delay(200);
 //  }
 
+  ctrl_on = 1;
   for (volatile uint32_t ticks = 0;; ticks++)
   {
     /* USER CODE END WHILE */
@@ -185,11 +217,49 @@ int main(void)
 	  if(last_uart + UART_RX_INACTIVITY_TIMEOUT < tick) {
 		  uart_rx_valid = 0;
 	  }
-	  if(1 || tick < 13000) { // HAL_GetTick() > 10000 &&
-		  volatile uint16_t uart_buflen = sprintf(uart_buf, "%d\t%.1f\t%.1f\t%.1f\t%d\t%d\r\n", HAL_GetTick(), ctrl, torque, speed_avg, imu_avg.tilt, imu_avg.gyro); // "%d\t%.1f\r\n", HAL_GetTick(), speed_avg);
+
+	  if(0) {
+		  if(tick > 7000) {
+			  ctrl = 0;
+		  }
+		  else {
+			  if(tick > 3000) {
+				  ctrl = CTRL0 / 2; // -abs(ctrl_setpoint);
+			  }
+//			  ctrl = ctrl_setpoint; // (ctrl * 7 + ctrl_setpoint) / 8;
+
+			  if(1) { // HAL_GetTick() > 10000 &&
+				  // "%lu,%d,%.1f\r\n", tick, ctrl, speed_avg); //
+				  volatile uint16_t uart_buflen = sprintf(uart_buf, "%lu,%d,%.1f\r\n", tick, ctrl, speed_avg);
+				  HAL_UART_Transmit_IT(&huart2, uart_buf, uart_buflen);
+				  HAL_Delay(20);
+			  }
+		  }
+	  }
+
+	  if(1) { // HAL_GetTick() > 10000 &&
+		  // "%lu,%d,%.1f\r\n", tick, ctrl, speed_avg); //
+		  volatile uint16_t uart_buflen = sprintf(uart_buf, "%lu\t%d\t%.2f\t%.2f\t%.1f\t%d\t%d\r\n", HAL_GetTick(), ctrl, bemf_volts, torque_volts, speed_avg, imu_avg.tilt, imu.gyro); // ctrl, torque_ccr, speed_avg, enc_revs // "%d\t%.1f\r\n", HAL_GetTick(), speed_avg);
 		  HAL_UART_Transmit_IT(&huart2, uart_buf, uart_buflen);
 		  HAL_Delay(20);
 	  }
+
+	  if(0) {
+		  if(imu_avg.tilt > 0 && gyro_log_idx == 0) {
+			  gyro_log_idx = 1;
+		  }
+		  if(gyro_log_idx > 0 && gyro_log_idx < 512) {
+			  gyro_log[gyro_log_idx & 0x1FF][0] = imu.gyro;
+			  gyro_log[gyro_log_idx & 0x1FF][1] = ctrl;
+			  gyro_log_idx++;
+			  HAL_Delay(1);
+		  }
+		  else if(gyro_log_idx == 512) {
+			  ctrl_on = 0;
+			  ctrl = 0;
+		  }
+	  }
+
 
 //	  if(HAL_GPIO_ReadPin(BUTTON_GPIO_Port, BUTTON_Pin) == GPIO_PIN_RESET && !edge) {
 //		  offset++;
@@ -258,6 +328,7 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void DMA2_XferCpltCallback(DMA_HandleTypeDef *hdma) {
 	uart_rx_valid = 1;
+	last_uart = HAL_GetTick();
 }
 void HAL_UART_RxHalfCpltCallback(UART_HandleTypeDef *huart) {
 	uart_rx_valid = 1;

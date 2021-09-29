@@ -12,3 +12,7 @@
 int8_t sgn(int32_t x) {
 	return x > 0 ? 1 : -1; // (x < 0 ? -1 : 0);
 }
+
+int8_t fsgn(float x) {
+	return x > 0 ? 1 : -1; // (x < 0 ? -1 : 0);
+}

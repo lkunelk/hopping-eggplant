@@ -4,7 +4,7 @@
 //
 // Changelog:
 //      2019-07-08 - Added Auto Calibration and offset generator
-//		   - and altered FIFO retrieval sequence to avoid using blocking code
+//       - and altered FIFO retrieval sequence to avoid using blocking code
 //      2016-04-18 - Eliminated a potential infinite loop
 //      2013-05-08 - added seamless Fastwire support
 //                 - added note about gyro calibration
@@ -93,14 +93,14 @@ MPU6050 mpu;
 // (in degrees) calculated from the quaternions coming from the FIFO.
 // Note that Euler angles suffer from gimbal lock (for more info, see
 // http://en.wikipedia.org/wiki/Gimbal_lock)
-#define OUTPUT_READABLE_EULER
+//#define OUTPUT_READABLE_EULER
 
 // uncomment "OUTPUT_READABLE_YAWPITCHROLL" if you want to see the yaw/
 // pitch/roll angles (in degrees) calculated from the quaternions coming
 // from the FIFO. Note this also requires gravity vector calculations.
 // Also note that yaw/pitch/roll angles suffer from gimbal lock (for
 // more info, see: http://en.wikipedia.org/wiki/Gimbal_lock)
-//#define OUTPUT_READABLE_YAWPITCHROLL
+#define OUTPUT_READABLE_YAWPITCHROLL
 
 // uncomment "OUTPUT_READABLE_REALACCEL" if you want to see acceleration
 // components with gravity removed. This acceleration reference frame is
@@ -184,52 +184,29 @@ void setup() {
     // crystal solution for the UART timer.
 
     // initialize device
-    Serial.println(F("Initializing I2C devices..."));
+    // Serial.println(F("Initializing I2C devices..."));
     mpu.initialize();
     pinMode(INTERRUPT_PIN, INPUT);
 
     // verify connection
-    Serial.println(F("Testing device connections..."));
-    Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+    // Serial.println(F("Testing device connections..."));
+    // Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+
+    // wait for ready
+    // Serial.println(F("\nSend any character to begin DMP programming and demo: "));
+    // while (Serial.available() && Serial.read()); // empty buffer
+    // while (!Serial.available());                 // wait for data
+    // while (Serial.available() && Serial.read()); // empty buffer again
 
     // load and configure the DMP
-    Serial.println(F("Initializing DMP..."));
+    // Serial.println(F("Initializing DMP..."));
     devStatus = mpu.dmpInitialize();
 
-//    int16_t xoff = -430, yoff = -72, zoff = 1109;
-    int16_t xoff = -392, yoff = -213, zoff = 1301;
-    uint8_t bank[6] = { xoff >> 8, yoff & 0xFF, yoff >> 8, zoff & 0xFF, zoff >> 8, xoff & 0xFF };
     // supply your own gyro offsets here, scaled for min sensitivity
-    // DL: min sensitivity? really? okay.
-//    Serial.print(mpu.getXAccelOffset()); Serial.print('\t');
-//    Serial.print(mpu.getYAccelOffset()); Serial.print('\t');
-//    Serial.println(mpu.getZAccelOffset()); // Serial.print('\t');
-//    mpu.setYAccelOffset(0xFF << 8 | 0xFF);
-//    mpu.setZAccelOffset((-171 & 0xFF) << 8 | 0b101);
-    if(1) {
-      // ARRGGGHHHH
-      // so they only let you set these registers if you set the whole word, starting with the MSB which seems to LOCK the register
-      // so it's actually impossible to set all three aside from some weird voodoo that they aren't disclosing
-      // so for now, just calibrate X and Y. set MSB z. EFFF.
-      mpu.setZAccelOffset((zoff & 0xFF00) | (xoff & 0xFF)); // i think invensense really doesn't want us touchy-touchy with these registers
-      mpu.setXAccelOffset((xoff & 0xFF00) | (yoff & 0xFF));
-      mpu.setYAccelOffset((yoff & 0xFF00) | (zoff & 0xFF));
-//      I2Cdev::writeByte(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_ZA_OFFS_H, (zoff & 0xFF00));
-    }
-    else {
-      I2Cdev::writeBytes(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_XA_OFFS_H, 6, bank); // nope. doesn't work.
-    }
-    
-    // A) the MSB must be set for the LSB to be active
-    // B) it must be set as a word
-    // C) the twisting of the bytes is very... unfriendly, to say the least
-
-//    I2Cdev::writeByte(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_YA_OFFS_H-1, 0x00);
-//    I2Cdev::writeByte(MPU6050_DEFAULT_ADDRESS, MPU6050_RA_YA_OFFS_H, 0xFF); // nope, doesn't work.
-    
-    // ohhhh. so the offsets aren't 16-bit. They take higher significant bits. No WONDER this was impossible to calibrate.
-    // it just cans the least significant 8 bits. Sigh... of course. One of those registers is probably do-not-care or even something we shouldn't be programming.
-    // Should've figured...
+    int16_t xoff = -392, yoff = -213, zoff = 1301;
+    mpu.setXAccelOffset(xoff);
+    mpu.setYAccelOffset(yoff);
+    mpu.setZAccelOffset(zoff);
 
     // make sure it worked (returns 0 if so)
     if (devStatus == 0) {
@@ -237,20 +214,19 @@ void setup() {
 //        mpu.CalibrateAccel(6);
         mpu.CalibrateGyro(6);
 //        mpu.PrintActiveOffsets();
-
         // turn on the DMP, now that it's ready
-        Serial.println(F("Enabling DMP..."));
+        // Serial.println(F("Enabling DMP..."));
         mpu.setDMPEnabled(true);
 
         // enable Arduino interrupt detection
-        Serial.print(F("Enabling interrupt detection (Arduino external interrupt "));
-        Serial.print(digitalPinToInterrupt(INTERRUPT_PIN));
-        Serial.println(F(")..."));
+        // Serial.print(F("Enabling interrupt detection (Arduino external interrupt "));
+//        Serial.print(digitalPinToInterrupt(INTERRUPT_PIN));
+//        Serial.println(F(")..."));
         attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
         mpuIntStatus = mpu.getIntStatus();
 
         // set our DMP Ready flag so the main loop() function knows it's okay to use it
-        Serial.println(F("DMP ready! Waiting for first interrupt..."));
+        // Serial.println(F("DMP ready! Waiting for first interrupt..."));
         dmpReady = true;
 
         // get expected DMP packet size for later comparison
@@ -265,10 +241,10 @@ void setup() {
         Serial.println(F(")"));
     }
 
+    mpu.setFIFOTimeout(0);
+    
     // configure LED for output
     pinMode(LED_PIN, OUTPUT);
-    pinMode(10, OUTPUT);
-    digitalWrite(LED_PIN, HIGH);
 }
 
 
@@ -277,31 +253,58 @@ void setup() {
 // ===                    MAIN PROGRAM LOOP                     ===
 // ================================================================
 
-#define T0 (-1.78f)
+#define T0 (-M_PI_2)
 #define Trange (0.2f)
+#define UART_IDX_SHIFT 2
 
+VectorFloat g;
+//VectorInt16 gyro;
+const uint16_t packet_min_max = (1 << (16 - UART_IDX_SHIFT * 2)) - 1;
+uint16_t aval = 0;
+int16_t last_gyro_y = 0;
+uint16_t iters = 0;
+
+uint16_t last_secs = 0;
 void loop() {
-  // if programming failed, don't try to do anything
-  if (!dmpReady) return;
-  // read a packet from FIFO
-  if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) { // Get the Latest packet 
-  
-    // display Euler angles in degrees
-    mpu.dmpGetQuaternion(&q, fifoBuffer);
-    VectorFloat g;
-    mpu.dmpGetGravity(&g, &q);
+    uint16_t secs = millis() / 1000;
+    if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) { // Get the Latest packet 
+        // display Euler angles in degrees
+        mpu.dmpGetQuaternion(&q, fifoBuffer);
+//        mpu.dmpGetGyro(&gyro, fifoBuffer);
+        mpu.dmpGetGravity(&g, &q);
+        
+        float angle = atan2(g.z, g.x); // euler[0] * 180/M_PI;
+        aval = constrain(((angle - T0) / Trange + 1.0f) * 512.0f, 0, 1024);
+        
+//        Serial.print("gyro:");
+//        Serial.print(gyro.y);
+//        Serial.print("\tangle:");
+//        Serial.print(angle);
+//        Serial.print("\aval:");
+//        Serial.println(aval);
+        digitalWrite(13, (secs & 1) == 0);
+        iters++;
+    }
+    else {
+    //    Serial.println("MISS");
+    //    delay(10);
+    }
     
+//    if(secs != last_secs) {
+//      Serial.println(iters);
+//      iters = 0;
+//      last_secs = secs;
+//    }
 
-    float angle = atan2(g.x, g.y); // euler[0] * 180/M_PI;
-    uint8_t aval = constrain(((angle - T0) / Trange + 1.0f) * 128.0f, 0, 255);
-    
-    analogWrite(10, aval);
-   
-    Serial.print("euler\t");
-    Serial.print(angle);
-    Serial.print("\tcons:");
-    Serial.println(aval);
-  }
+    int16_t raw_gyro_y = mpu.getRotationY();
+    uint16_t gyro_y = constrain(raw_gyro_y + ((int32_t)packet_min_max / 2), 0, packet_min_max); // conservative: the negative number has one extra LSB but that's okay
+//    iters += raw_gyro_y != last_gyro_y;
+    last_gyro_y = raw_gyro_y;
+
+    uint8_t uart_block[4] = { gyro_y, gyro_y >> (8 - UART_IDX_SHIFT), aval, aval >> (8 - UART_IDX_SHIFT) }; // little-endian
+    for(uint8_t i = 0; i < (1 << UART_IDX_SHIFT); i++) {
+        Serial.write(((uart_block[i] << UART_IDX_SHIFT) | i));
+    }
 }
 
 void print_raw() {
