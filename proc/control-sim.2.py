@@ -10,11 +10,11 @@ plt.close('all')
 plt.show()
 
 def run():
-	Mmotor = 0.186
+	Mmotor = 0.080
 	Mfly = 0.0357
 	rdisk = 0.0617318752905765
 	La = 0.10
-	Ifly = Mfly * rdisk ** 2 / 2
+	Ifly = 4.85E-5 # Mfly * rdisk ** 2 / 2
 	Ifly_ctr = Ifly + Mfly * La ** 2
 	Itot = (Ifly_ctr + Mmotor * La) * 2 # I _think_ it's x2 because in the inertial frame the Earth is the other part of that arm
 	g = 9.8
@@ -27,32 +27,35 @@ def run():
 	K = control.lqr(A[:3,:3], B[:3], Q, R)[0]
 	K = np.array(list(np.array(K)[0]) + [0]).reshape((1,-1)) # pad by 1
 	print(K)
-	T0 = 0.272
-	Vmax = 222 * math.pi * 2
+	T0 = 0.6
+	VDD = 11.8
+	KV = 1000
+	Vmax = VDD * KV / 60 * math.pi * 2
 
 	T = np.arange(0, 20, 0.1)
 	N = np.random.normal(scale=0.1, size=T.shape)
 	SS = control.StateSpace(A - np.dot(B, K), np.array([ 0, 0, 1, 0 ]).reshape((-1, 1)), np.eye(A.shape[0]), np.zeros((A.shape[1], 1)))
-	# Tout, _, xout = control.forced_response(SS, T, N, X0=(0, 0.1, 0.1, 0))
-	D = 0.4
-	buf = SortedDict([])
-	def f(t, y):
-		while(len(buf) > 1 and buf.peekitem(1)[0] < t - D):
-			buf.popitem(0)
-		buf[t] = y
-		print(t, len(buf))
-		u = np.random.normal(scale=0.4)
-		u_ = 0
-		if t > D:
-			bufT = buf.keys()
-			y_ = np.array([np.interp(t - D, bufT, [buf[b][i] for b in buf]) for i in range(y.size - 1)]).flatten() # delay by D, hope the linear interp isn't too bad
-			u_ = np.dot(K, y_.reshape((-1,1)))
-			u -= u_
+	Tout, _, xout = control.forced_response(SS, T, N, X0=(0, 0.1, 1.0, 0))
+	
+	# D = 0.4
+	# buf = SortedDict([])
+	# def f(t, y):
+	# 	while(len(buf) > 1 and buf.peekitem(1)[0] < t - D):
+	# 		buf.popitem(0)
+	# 	buf[t] = y
+	# 	print(t, len(buf))
+	# 	u = np.random.normal(scale=0.4)
+	# 	u_ = 0
+	# 	if t > D:
+	# 		bufT = buf.keys()
+	# 		y_ = np.array(buf.peekitem(1)[:-1]) # delay by D, hope the linear interp isn't too bad
+	# 		u_ = np.dot(K, y_.reshape((-1,1)))
+	# 		u -= u_
 			
-		return list((np.dot(A, y[:4].reshape((-1,1))) + np.dot(B, u)).flatten()) + [u_]
+	# 	return list((np.dot(A, y[:4].reshape((-1,1))) + np.dot(B, u)).flatten()) + [u_]
 		
-	sol = scipy.integrate.solve_ivp(f, (0, 5), (0, 0.1, 0.1, 0, 0), rtol=2E-3) # , t_eval=T)
-	Tout, xout = (sol.t, sol.y)
+	# sol = scipy.integrate.solve_ivp(f, (0, 5), (0, 0.1, 0.1, 0, 0), rtol=2E-3) # , t_eval=T)
+	# Tout, xout = (sol.t, sol.y)
 	
 	plt.figure()
 	[plt.plot(Tout, x) for x in xout[:3]]
