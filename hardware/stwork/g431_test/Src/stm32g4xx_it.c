@@ -49,6 +49,7 @@
 /* USER CODE BEGIN PV */
 extern volatile int32_t ctrl_i, ctrl_p, ctrl_d_buf[NUM_CTRL_D_BUF];
 extern volatile uint8_t ctrl_d_idx;
+extern volatile uint8_t uart_rx_valid;
 volatile int8_t tick_blackout = 0;
 /* USER CODE END PV */
 
@@ -65,11 +66,12 @@ volatile int8_t tick_blackout = 0;
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_adc1;
 extern TIM_HandleTypeDef htim1;
-extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim6;
 extern TIM_HandleTypeDef htim7;
+extern DMA_HandleTypeDef hdma_usart2_rx;
+extern UART_HandleTypeDef huart2;
 /* USER CODE BEGIN EV */
-extern TIM_HandleTypeDef htim7;
+extern TIM_HandleTypeDef htim4;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -223,6 +225,34 @@ void DMA1_Channel1_IRQHandler(void)
 }
 
 /**
+  * @brief This function handles DMA1 channel2 global interrupt.
+  */
+void DMA1_Channel2_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Channel2_IRQn 0 */
+
+  /* USER CODE END DMA1_Channel2_IRQn 0 */
+  HAL_DMA_IRQHandler(&hdma_usart2_rx);
+  /* USER CODE BEGIN DMA1_Channel2_IRQn 1 */
+
+  /* USER CODE END DMA1_Channel2_IRQn 1 */
+}
+
+/**
+  * @brief This function handles EXTI line[9:5] interrupts.
+  */
+void EXTI9_5_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+
+  /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
+  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+
+  /* USER CODE END EXTI9_5_IRQn 1 */
+}
+
+/**
   * @brief This function handles TIM1 trigger and commutation interrupts and TIM17 global interrupt.
   */
 void TIM1_TRG_COM_TIM17_IRQHandler(void)
@@ -237,17 +267,17 @@ void TIM1_TRG_COM_TIM17_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles TIM4 global interrupt.
+  * @brief This function handles USART2 global interrupt / USART2 wake-up interrupt through EXTI line 26.
   */
-void TIM4_IRQHandler(void)
+void USART2_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM4_IRQn 0 */
+  /* USER CODE BEGIN USART2_IRQn 0 */
 
-  /* USER CODE END TIM4_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim4);
-  /* USER CODE BEGIN TIM4_IRQn 1 */
+  /* USER CODE END USART2_IRQn 0 */
+  HAL_UART_IRQHandler(&huart2);
+  /* USER CODE BEGIN USART2_IRQn 1 */
 
-  /* USER CODE END TIM4_IRQn 1 */
+  /* USER CODE END USART2_IRQn 1 */
 }
 
 /**
@@ -296,14 +326,24 @@ void TIM7_IRQHandler(void)
 void HAL_TIMEx_CommutCallback(TIM_HandleTypeDef *htim) {
 
 }
+//
+//
+//void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
+//	if(htim->Instance == TIM8) {
+//		z_triggered = 1;
+//	}
+//}
+
 volatile uint16_t tim_posedge = 0;
 volatile uint8_t last_r = 0;
 extern volatile uint16_t pwmin;
 volatile uint16_t pwmins[64] = { 0 };
 volatile uint8_t pwmins_idx = 0;
 volatile uint8_t pwmin_triggered = 0;
+volatile uint8_t z_triggered = 0;
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	if(GPIO_Pin == PWMIN_Pin) {
+	switch(GPIO_Pin) {
+	case PWMIN_Pin: {
 		uint8_t r = HAL_GPIO_ReadPin(PWMIN_GPIO_Port, PWMIN_Pin);
 		volatile uint16_t tim = __HAL_TIM_GET_COUNTER(&htim7);
 		if(last_r == 1 && r == 0) {
@@ -321,17 +361,25 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			tim_posedge = tim;
 		}
 		last_r = r;
+		break;
+	}
+	case Z_Pin:
+		z_triggered = 1;
+		__HAL_TIM_SET_COUNTER(&htim4, 0);
+		break;
+	default:
+		break;
 	}
 }
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM4) {
-		motor_tick(0);
-	}
+//	if(htim->Instance == TIM4) {
+//		motor_tick(0);
+//	}
 }
 extern volatile uint16_t pwmin;
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if(htim->Instance == TIM6 && pwmin_triggered > 0) {
-		ctrl_tick();
+	if(htim->Instance == TIM6 && z_triggered) { // && uart_rx_valid) {
+		motor_tick();
 	}
 }
 /* USER CODE END 1 */
