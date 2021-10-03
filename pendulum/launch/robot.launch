@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="z_pos" default="0"/>
+    <arg name="y_pos" default="0"/>
+    <arg name="robot_name" default="robot"/>
+    <arg name="model" default="$(find full_description)/urdf/full.xacro"/>
+    <!--  <arg name="model" value="$(find pendulum)/urdf/pendulum.xacro"/>-->
+
+    <param name="robot_description"
+           command="$(find xacro)/xacro $(arg model)"/>
+
+    <node name="urdf_spawner"
+          pkg="gazebo_ros"
+          type="spawn_model"
+          respawn="false"
+          output="screen"
+          args="-z $(arg z_pos)
+              -y $(arg y_pos)
+              -R 0.1
+              -urdf
+              -model $(arg robot_name)
+              -param robot_description"/>
+
+    <rosparam command="load"
+              file="$(find pendulum)/config/joints.yaml"/>
+
+    <node name="base_contact"
+          pkg="pendulum"
+          respawn="true"
+          type="base_contact"
+    />
+
+    <node name="orientation_ctrl"
+          pkg="pendulum"
+          respawn="true"
+          type="orientation_ctrl"
+          output="screen"
+    />
+
+    <node name="jump_ctrl"
+          pkg="pendulum"
+          respawn="true"
+          type="jump_ctrl"
+    />
+
+    <node name="spring_emulator"
+          pkg="pendulum"
+          respawn="true"
+          type="spring_emulator"
+    />
+
+    <node name="bot_controller_spawner"
+          pkg="controller_manager"
+          type="spawner"
+          respawn="true"
+          args="
+              joint_state_controller
+              flywheel_controller
+              yaw_flywheel_controller
+              arm_spring
+              arm_controller"/>
+</launch>
+
+

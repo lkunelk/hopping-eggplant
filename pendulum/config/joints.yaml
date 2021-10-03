@@ -1,0 +1,20 @@
+joint_state_controller:
+  type: "joint_state_controller/JointStateController"
+  publish_rate: 50000
+
+flywheel_controller:
+  type: "effort_controllers/JointEffortController"
+  joint: flywheel_joint
+
+yaw_flywheel_controller:
+  type: "effort_controllers/JointEffortController"
+  joint: yaw_flywheel_joint
+
+arm_spring:
+  type: "effort_controllers/JointEffortController"
+  joint: spring_joint
+
+arm_controller:
+  type: "effort_controllers/JointEffortController"
+  joint: servo_joint
+  # pid: { p: 0.01, i: 0.0000001, d: 1.454 } # P param is arbitrary but small (so that angle changes don't change the force input much), D param is 0.1s/60deg -> 7.2N-m

@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="pendulum">
+    <xacro:macro name="arm" params="length width linear_density">
+
+        <xacro:property name="mass" value="${linear_density * length}"/>
+
+        <link name="arm_link">
+            <visual>
+                <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+                <geometry>
+                    <cylinder radius="${width/2}" length="${length}"/>
+                </geometry>
+            </visual>
+            <inertial>
+                <origin rpy="0 0 0" xyz="0 0 ${length/2}"/>
+                <mass value="${linear_density * length}"/>
+                <inertia ixx="${mass/12*(width**2 + width**2)}"
+                         ixy="0.00"
+                         ixz="0.00"
+                         iyy="${mass/12*(width**2 + width**2)}"
+                         iyz="0.00"
+                         izz="${mass/12*(width**2 + width**2)}"/>
+            </inertial>
+        </link>
+
+        <joint name="spring_joint" type="prismatic">
+            <parent link="base_link"/>
+            <child link="arm_link"/>
+            <axis xyz="0 0 1"/>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <!-- <dynamics friction="0" damping="50" /> --> <!-- implement dynamics using the PID controller (D = damping) -->
+            <limit lower="-1" upper="0" effort="1000" velocity="1000"/>
+        </joint>
+
+        <transmission name="$spring_joint_transmission">
+            <type>transmission_interface/SimpleTransmission</type>
+            <actuator name="$spring_joint_motor">
+                <mechanicalReduction>1</mechanicalReduction>
+            </actuator>
+            <joint name="spring_joint">
+                <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+            </joint>
+        </transmission>
+
+    </xacro:macro>
+</robot>
+
