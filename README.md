@@ -23,20 +23,16 @@ source build/setup.bash
 ```
 3. launch simulation
 ```
-roslaunch pendulum gazebo.launch
-```
-4. run controller
-```
-rosrun pendulum my_controller
+roslaunch pendulum sim.launch
 ```
 
-5. publish to motor directly
+4. publish to motor directly
 ```
 rostopic pub /flywheel_controller/command std_msgs/Float64 "data: 0.0"
 ```
-6. graph data
+5. graph data
 ```
-rqt_plot
+roslaunch pendulum plots.launch
 ```
 manually add topics to graph. You can see available topics with following:
 ```
@@ -48,3 +44,7 @@ rostopic list
 roslaunch pendulum respawn.launch
 ```
 
+8. quit fast
+```
+./gk
+```
