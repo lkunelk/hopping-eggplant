@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="model" value="$(find full_description)/urdf/full.xacro"/>
+    <!--  <arg name="model" value="$(find pendulum)/urdf/pendulum.xacro"/>-->
+
+    <param name="robot_description"
+           command="$(find xacro)/xacro $(arg model)"/>
+
+    <!-- We use empty_world.launch to start gazebo, changing only the name of the world to be launched -->
+    <include file="$(find pendulum)/launch/empty_world.launch">
+        <arg name="debug" value="false"/>
+        <arg name="gui" value="true"/>
+        <arg name="paused" value="true"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="headless" value="false"/>
+    </include>
+
+    <include file="$(find pendulum)/launch/robot.launch">
+        <arg name="robot_name" value="robot"/>
+        <arg name="model" default="$(find full_description)/urdf/full.xacro"/>
+        <arg name="z_pos" value="0.2"/>
+        <!-- <arg name="y_pos" value="-.2"/> -->
+        <!-- <arg name="x_pos" value="0.6"/> -->
+    </include>
+
+<!--    <include file="$(find pendulum)/launch/robot.launch" ns="bot2">-->
+<!--        <arg name="robot_name" value="bot2"/>-->
+<!--        <arg name="model" default="$(find pendulum)/urdf/pendulum.xacro"/>-->
+<!--        <arg name="z_pos" value="0.1"/>-->
+<!--        <arg name="y_pos" value=".2"/>-->
+<!--    </include>-->
+
+</launch>
+
+

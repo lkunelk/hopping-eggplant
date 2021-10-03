@@ -1,0 +1,246 @@
+<?xml version="1.0" ?>
+<robot name="full" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find pendulum)/urdf/imu.xacro"/>
+
+<xacro:include filename="$(find full_description)/urdf/materials.xacro" />
+<xacro:include filename="$(find full_description)/urdf/full.trans" />
+<xacro:include filename="$(find full_description)/urdf/full.gazebo" />
+<link name="base_link">
+  <inertial>
+    <origin rpy="0 0 0" xyz="-0.001293985439476192 0.008696164684669999 0.19102874553521218"/>
+    <mass value="0.029100376183393978"/>
+    <inertia ixx="4.6e-05" ixy="-0.0" ixz="-0.0" iyy="1e-05" iyz="0.0" izz="4.8e-05"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="yaw_flywheel">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <mass value="0.100"/>
+    <inertia ixx="1e-03" ixy="-0.0" ixz="-0.0" iyy="3.5e-05" iyz="-0.0" izz="3.5e-05"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <geometry>
+      <box size=".05 .05 .01"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="Savox_SV1270TG_v4_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0.005831732473496099 0.02381767967516413 -0.005000421818498552"/>
+    <mass value="0.05588660670883367"/>
+    <inertia ixx="1e-05" ixy="-0.0" ixz="0.0" iyy="8e-06" iyz="0.0" izz="1.4e-05"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0.003047 -0.0202 -0.179703"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/Savox_SV1270TG_v4_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="battery_v2_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="-4.21818495628494e-07 -1.7069679003611782e-15 0.014999578181500939"/>
+    <mass value="0.09719999999999998"/>
+    <inertia ixx="1e-05" ixy="0.0" ixz="0.0" iyy="7.3e-05" iyz="0.0" izz="6.8e-05"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0.002297 0.02945 -0.203703"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/battery_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="_bldc_parts.d32996c5-cb5d-48d1-b36d-40a50d399b36_v5_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0.005416070476629217 -0.008249769076539576 0.017190299561071626"/>
+    <mass value="0.007765972237267597"/>
+    <inertia ixx="2e-06" ixy="-0.0" ixz="-0.0" iyy="1e-06" iyz="0.0" izz="1e-06"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="-0.028253 -0.00705 -0.213703"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/_bldc_parts.d32996c5-cb5d-48d1-b36d-40a50d399b36_v5_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="Turnigy_Aerodrive_SK3_-_2836_v2_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0.018054083245234838 -1.1684663653310778e-13 -2.8213514524644268e-08"/>
+    <mass value="0.07999399647342939"/>
+    <inertia ixx="7e-06" ixy="-0.0" ixz="-0.0" iyy="1.2e-05" iyz="0.0" izz="1.2e-05"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="-0.033253 0.0012 -0.228977"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/Turnigy_Aerodrive_SK3_-_2836_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="flywheel_v2_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0.0014986943552602328 7.592667813915988e-15 -2.8213514774444448e-08"/>
+    <mass value="0.100"/>
+    <inertia ixx="1e-03" ixy="-0.0" ixz="-0.0" iyy="3.5e-05" iyz="-0.0" izz="3.5e-05"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="-0.070003 0.0012 -0.228977"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/flywheel_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="9657K449_COMPRESSION_SPRING_v1_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.019803"/>
+    <mass value="0.0"/>
+    <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.019803"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/9657K449_COMPRESSION_SPRING_v1_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="middle_v13_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0.0001790821739212855 1.3992034871236863e-05 -0.07572427018815987"/>
+    <mass value="0.01826712193865079"/>
+    <inertia ixx="7e-06" ixy="0.0" ixz="-0.0" iyy="7e-06" iyz="-0.0" izz="1.1e-05"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.199703"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/middle_v13_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="Leg_0_v2_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="-4.2181849628047897e-07 -9.756626929979806e-15 0.028777697727251528"/>
+    <mass value="0.04388165329610352"/>
+    <inertia ixx="0.000377" ixy="0.0" ixz="-0.0" iyy="0.000377" iyz="-0.0" izz="0.0"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.134603"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/Leg_0_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+</link>
+
+<link name="95495K673_POLYURETHANE_RUBBER_ADHESIVE-BACK_BUMPER_v1_1">
+  <inertial>
+    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.011803"/>
+    <mass value="0.0"/>
+    <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0"/>
+  </inertial>
+  <visual>
+    <origin rpy="0 0 0" xyz="0.000147 -0.00055 -0.011803"/>
+    <geometry>
+      <mesh filename="package://full_description/meshes/95495K673_POLYURETHANE_RUBBER_ADHESIVE-BACK_BUMPER_v1_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silver_default"/>
+  </visual>
+  <collision>
+    <origin rpy="0 0 0" xyz="0.0 0.0 0.0"/>
+    <geometry>
+      <sphere radius=".005"/>
+    </geometry>
+  </collision>
+</link>
+
+<joint name="Rigid1" type="fixed">
+  <origin rpy="0 0 0" xyz="-0.003047 0.0202 0.179703"/>
+  <parent link="base_link"/>
+  <child link="Savox_SV1270TG_v4_1"/>
+</joint>
+
+<joint name="Rigid4" type="fixed">
+  <origin rpy="0 0 0" xyz="-0.002297 -0.02945 0.203703"/>
+  <parent link="base_link"/>
+  <child link="battery_v2_1"/>
+</joint>
+
+<joint name="Rigid5" type="fixed">
+  <origin rpy="0 0 0" xyz="0.028253 0.00705 0.213703"/>
+  <parent link="base_link"/>
+  <child link="_bldc_parts.d32996c5-cb5d-48d1-b36d-40a50d399b36_v5_1"/>
+</joint>
+
+<joint name="Rigid6" type="fixed">
+  <origin rpy="0 0 0" xyz="0.005 -0.00825 0.015274"/>
+  <parent link="_bldc_parts.d32996c5-cb5d-48d1-b36d-40a50d399b36_v5_1"/>
+  <child link="Turnigy_Aerodrive_SK3_-_2836_v2_1"/>
+</joint>
+
+<joint name="yaw_flywheel_joint" type="continuous">
+  <origin rpy="0 0 0" xyz="0.0 0.0 0.25"/>
+  <parent link="base_link"/>
+  <child link="yaw_flywheel"/>
+  <axis xyz="0.0 0.0 1.0"/>
+</joint>
+
+<joint name="flywheel_joint" type="continuous">
+  <origin rpy="0 0 0" xyz="0.03675 0.0 0.0"/>
+  <parent link="Turnigy_Aerodrive_SK3_-_2836_v2_1"/>
+  <child link="flywheel_v2_1"/>
+  <axis xyz="-1.0 0.0 0.0"/>
+</joint>
+
+<joint name="Rigid8" type="fixed">
+  <origin rpy="0 0 0" xyz="0.0 0.0 -0.1148"/>
+  <parent link="Leg_0_v2_1"/>
+  <child link="9657K449_COMPRESSION_SPRING_v1_1"/>
+</joint>
+
+<joint name="servo_joint" type="prismatic">
+  <origin rpy="0 0 0" xyz="-0.000147 0.00055 0.199703"/>
+  <parent link="base_link"/>
+  <child link="middle_v13_1"/>
+  <axis xyz="-0.0 0.0 -1.0"/>
+  <limit effort="100" lower="-0.0" upper="0.03" velocity="100"/>
+</joint>
+
+<joint name="spring_joint" type="prismatic">
+  <origin rpy="0 0 0" xyz="0.0 0.0 -0.0651"/>
+  <parent link="middle_v13_1"/>
+  <child link="Leg_0_v2_1"/>
+  <axis xyz="-0.0 0.0 -1.0"/>
+  <limit effort="100" lower="-1.0" upper="1.0" velocity="100"/>
+</joint>
+
+<joint name="Rigid12" type="fixed">
+  <origin rpy="0 0 0" xyz="0.0 0.0 -0.1228"/>
+  <parent link="Leg_0_v2_1"/>
+  <child link="95495K673_POLYURETHANE_RUBBER_ADHESIVE-BACK_BUMPER_v1_1"/>
+</joint>
+
+</robot>
