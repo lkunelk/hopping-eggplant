@@ -10,7 +10,7 @@
     <include file="$(find pendulum)/launch/empty_world.launch">
         <arg name="debug" value="false"/>
         <arg name="gui" value="true"/>
-        <arg name="paused" value="false"/>
+        <arg name="paused" value="true"/>
         <arg name="use_sim_time" value="true"/>
         <arg name="headless" value="false"/>
     </include>
@@ -18,8 +18,9 @@
     <include file="$(find pendulum)/launch/robot.launch">
         <arg name="robot_name" value="robot"/>
         <arg name="model" default="$(find full_description)/urdf/full.xacro"/>
-        <arg name="z_pos" value="0.1"/>
-        <arg name="y_pos" value="-.2"/>
+        <arg name="z_pos" value="0.2"/>
+        <!-- <arg name="y_pos" value="-.2"/> -->
+        <!-- <arg name="x_pos" value="0.6"/> -->
     </include>
 
 <!--    <include file="$(find pendulum)/launch/robot.launch" ns="bot2">-->

@@ -7,6 +7,7 @@ const std::string
   
   PRISM_JOINT_NAME("servo_joint"),
   SPRING_JOINT_NAME("spring_joint"),
+  YAW_FLY_JOINT_NAME("yaw_flywheel_joint"),
   FLY_JOINT_NAME("flywheel_joint");
 
 const float

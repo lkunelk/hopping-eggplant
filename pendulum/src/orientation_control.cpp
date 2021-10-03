@@ -12,10 +12,10 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "util.hpp"
 
-const float FLY_P = 0;  // 1.6e-4f;
-const float P = 0.88f;
-const float I = 0.00f;
-const float D = 0.20f;
+const float FLY_V_P = 0;  // 1.6e-4f;
+const float FLY_P = 0.88f;
+const float FLY_I = 0.00f;
+const float FLY_D = 0.20f;
 const float G = 9.8f;
 
 // Motor Parameters
@@ -55,15 +55,15 @@ void linkStateCallback(const gazebo_msgs::LinkStates &msg) {
 
 void controlUpdate() {
   // compute and publish control command
-  ROS_INFO("Robot angle: %f %f", robotAngPos, robotAngPos);
-  float command = (-P * robotAngPos) + (-D * robotAngVel) + (+FLY_P * flywheelVel);
+  // ROS_INFO("Robot angle: %f %f", robotAngPos, robotAngPos);
+  float command = (-FLY_P * robotAngPos) + (-FLY_D * robotAngVel) + (+FLY_V_P * flywheelVel);
   float sign = (command > 0) - (command < 0);
   float maxTorque = fmax(0.0f, (1 - std::abs(flywheelVel) / noLoadSpeed) * stallTorque);
 
   command = sign * std::min(maxTorque, std::abs(command));
 
   commandMsg.data = command;
-  flywheelCommandPub.publish(commandMsg);
+  // flywheelCommandPub.publish(commandMsg);
 }
 
 int main(int argc, char **argv) {

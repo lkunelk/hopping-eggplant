@@ -5,6 +5,7 @@
 #include "util.hpp"
 
 float SPRING_K = 433.1f;  // 0.1925; // N/m
+float SPRING_B = 10.0f;
 
 ros::Publisher springPub;
 std_msgs::Float64 springMsg;
@@ -12,7 +13,7 @@ std_msgs::Float64 springMsg;
 void cbUpdateSpringK(const std_msgs::Float64 &msg) { SPRING_K = msg.data; }
 
 void cb(const sensor_msgs::JointState &msg) {
-  springMsg.data = -SPRING_K * msg.position[idxOf(msg.name, SPRING_JOINT_NAME)];
+  springMsg.data = -SPRING_K * msg.position[idxOf(msg.name, SPRING_JOINT_NAME)] - SPRING_B * msg.velocity[idxOf(msg.name, SPRING_JOINT_NAME)];
   springPub.publish(springMsg);
 }
 
