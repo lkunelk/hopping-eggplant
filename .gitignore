@@ -1,3 +1,5 @@
+.DS_Store
+
 # my stuff
 .idea
 cmake-build-debug/
