@@ -21,13 +21,13 @@
 const float FLY_V_P = 8.776E-1;  // 1.6e-4f;
 const float FLY_P = 6.65E3f;
 const float FLY_I = 0.00f;
-const float FLY_D = 5.84E3f;
+const float FLY_D = 5.84E2f;
 const float Itot = 0.0053f;
 const float G = 9.8f;
 
 // Motor Parameters
-const float stallTorque = 0.2;     // Nm
-const float noLoadSpeed = 1000.0;  // rad/s
+const float stallTorque = 0.51;     // Nm
+const float noLoadSpeed = 718.0;  // rad/s
 float flywheelVel = 0.0f, yaw_fly_vel = 0.0f;
 
 // control related
@@ -93,7 +93,7 @@ void linkStateCallback(const gazebo_msgs::LinkStates &msg) {
     // * negative angle
     // * negative a.z
     commandMsg.data = (-YAW_P * angle * (robotAngPos * 0.9f + 0.1f)) + YAW_D * a.z();
-    yawPub.publish(commandMsg);
+    // yawPub.publish(commandMsg);
     ROS_INFO("%.3f\t%.3f\t%.3f\t%.3f", commandMsg.data, angle, a.z(), yaw_fly_vel);
   }
   
