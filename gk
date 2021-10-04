@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+ps aux | grep -P '(gazebo|gz|ros)' | awk '{print $2}' | xargs kill -SIGTERM
