@@ -6,6 +6,28 @@
 <gazebo>
   <plugin filename="libgazebo_ros_control.so" name="control"/>
 </gazebo>
+
+<xacro:include filename="$(find uuv_gazebo_ros_plugins)/urdf/thruster_snippets.xacro" />
+
+<xacro:macro name="base_thruster" params="id">
+  <linkName>thruster_${id}</linkName>
+  <jointName>thruster_${id}_joint</jointName>
+  <thrusterID>${id}</thrusterID>
+  <gain>1</gain>
+  <xacro:thruster_cf_basic_macro rotor_constant="4.5E-7" />
+  <!-- <xacro:rotor_dyn_first_order_macro time_constant="0.1" /> -->
+  <dynamics><type>ZeroOrder</type></dynamics>
+</xacro:macro>
+
+<gazebo>
+  <plugin name="thruster_0_thruster_model" filename="libuuv_thruster_ros_plugin.so">
+    <xacro:base_thruster id="0" />
+  </plugin>
+  <plugin name="thruster_1_thruster_model" filename="libuuv_thruster_ros_plugin.so">
+    <xacro:base_thruster id="1" />
+  </plugin>
+</gazebo>
+
 <gazebo reference="base_link">
   <material>${body_color}</material>
   <mu1>0.2</mu1>
