@@ -117,7 +117,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
-//  htim1.Instance->DIER |= TIM_DIER_COMIE;
+  htim1.Instance->DIER |= TIM_DIER_COMIE;
   hadc1.Instance->CFGR |= ADC_CFGR_DMACFG;
   // NOTE: the DMA must always be able to service the ADC: if the ADC OVR's, it'll stop DMA-ing even if the overrun behavior is set to overwrite (which doesn't make sense to me...)
   HAL_ADC_Start_DMA(&hadc1, adc1_reg, 2);
@@ -182,9 +182,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 	  uint32_t tick = HAL_GetTick();
-	  if(last_uart + UART_RX_INACTIVITY_TIMEOUT < tick) {
-		  uart_rx_valid = 0;
-	  }
+//	  if(last_uart + UART_RX_INACTIVITY_TIMEOUT < tick) {
+//		  uart_rx_valid = 0;
+//	  }
 	  if(1 || tick < 13000) { // HAL_GetTick() > 10000 &&
 		  volatile uint16_t uart_buflen = sprintf(uart_buf, "%d\t%.1f\t%.1f\t%.1f\t%d\t%d\r\n", HAL_GetTick(), ctrl, torque, speed_avg, imu_avg.tilt, imu_avg.gyro); // "%d\t%.1f\r\n", HAL_GetTick(), speed_avg);
 		  HAL_UART_Transmit_IT(&huart2, uart_buf, uart_buflen);

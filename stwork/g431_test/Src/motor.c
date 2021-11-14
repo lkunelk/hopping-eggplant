@@ -27,7 +27,7 @@ anyways, worst thing for power is to short to ground so don't do that
 #define TILT_HOME 115
 volatile uint16_t adc1_reg[8] = { 0 };
 volatile uint8_t uart_rx_buf[UART_RX_BUF_SIZE] = { 0 };
-volatile uint8_t uart_rx_valid = 0;
+volatile uint8_t uart_rx_valid = 1;
 volatile imu_t imu = { 0 };
 volatile imu_t imu_avg = { 0 };
 volatile uint16_t pwmin = 0;
@@ -326,7 +326,7 @@ void motor_tick(uint8_t standstill) {
 
 //	ctrl = 300;
 
-	uint8_t state_base = hall2state[abz] + (ctrl > 0 ? 0 : 3);
+	uint8_t state_base = hall2state[abz] + (ctrl > 0 ? 2 : 5);
 	volatile uint8_t state = (state_base + FWD_OFFSETS[fwd]) % 6;
 	volatile uint8_t state_still = (state_base + FWD_OFFSETS[FWD_T_STILL]) % 6;
 
@@ -337,7 +337,7 @@ void motor_tick(uint8_t standstill) {
 		HAL_TIM_GenerateEvent(&htim1, TIM_EVENTSOURCE_COM); // commutate immediately
 	}
 
-	volatile uint16_t nccr = min(MAX_CCR, fabs(ctrl)); // (standstill ? standstill_ccr0 : 0)); // !acceled *
+	volatile uint16_t nccr = min(MAX_CCR, fabs(ctrl)); // ctrl // (standstill ? standstill_ccr0 : 0)); // !acceled *
 
 	uint16_t ccer = (state_en[state] & ~TIM1_POL_MSK) | TIM1_POL;
 
